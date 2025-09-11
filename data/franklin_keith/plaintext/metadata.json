@@ -1,0 +1,11 @@
+{
+  "last_modified": "2025-09-11T23:35:28.996975+00:00",
+  "ssm_health_dean.txt": {
+    "appx_tokens": 5350,
+    "source_uri": "file:///D:/pyprojects/medical-record-analysis/data/franklin_keith/ssm_health_dean.pdf"
+  },
+  "unity_point_health_meriter.txt": {
+    "appx_tokens": 31268,
+    "source_uri": "file:///D:/pyprojects/medical-record-analysis/data/franklin_keith/unity_point_health_meriter.pdf"
+  }
+}

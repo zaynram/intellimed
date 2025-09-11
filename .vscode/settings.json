@@ -1,5 +1,9 @@
 {
   "python-envs.defaultEnvManager": "ms-python.python:system",
   "python-envs.pythonProjects": [],
-  "workbench.colorTheme": "Eva Dark Bold"
+  "workbench.colorTheme": "Eva Dark Bold",
+  "python.analysis.useLibraryCodeForTypes": true,
+  "python.analysis.typeEvaluation.enableExperimentalFeatures": true,
+  "python.pixiToolPath": "pixi",
+  "python.defaultInterpreterPath": ".pixi/envs/default/python.exe"
 }

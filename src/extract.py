@@ -1,159 +1,118 @@
 from __future__ import annotations
 
-import os
-
-os.environ.setdefault(
-    "TESSDATA_PREFIX",
-    "C:\\Program Files\\Tesseract-OCR\\tessdata",
-)
-
-import json
-import math
-import tqdm
-import fitz
-import pathlib as pl
-import datetime as dt
-
 import typing
-from datetime import datetime
-from pathlib import Path
 
 if typing.TYPE_CHECKING:
-    from fitz import Page, TextPage
-    from typing import Any, Final
-    from collections.abc import Iterable
+    from .types import *
 
-    type Iter[T] = Iterable[T]
-    type OptInt = int | None
-    type _PageRange = tuple[OptInt, OptInt, OptInt]
+import json
+import fitz
+from .utils import track
 
 
-class PageRange:
-    type _T = _PageRange
-    ALL: Final = (0, None, 1)
-    EVEN: Final = (0, None, 2)
-    ODD: Final = (1, None, 2)
+class Extractor:
+    path: Path
 
-    @staticmethod
-    def before(n: int, *, step: int | None = None) -> _PageRange:
-        return (None, n, step)
+    _metadata: dict[str, Any]
 
-    @staticmethod
-    def after(n: int, *, step: int | None = None) -> _PageRange:
-        return (n, None, step)
+    def _get_dir(self, path: Path) -> Path:
+        if not path.exists():
+            path.mkdir()
+        elif [*path.iterdir()]:
+            from .utils import confirm
 
-    @staticmethod
-    def custom(
-        start: int | None = None,
-        end: int | None = None,
-        *,
-        step: int | None = None,
-    ) -> _PageRange:
-        return (start, end, step)
+            if not confirm(f"Overwrite existing files at '{path}'?"):
+                print("File processing aborted.", flush=True)
+                raise SystemExit(0)
 
+        return path
 
-def pages_generator(
-    input_files: Iter[Path],
-    page_ranges: dict[str, _PageRange],
-) -> Iter[Iter[Page]]:
-    return (fitz.open(f).pages(*page_ranges[f.name]) for f in input_files)
+    custom_text_dir: Path | None = None
 
+    @property
+    def text_dir(self) -> Path:
+        return self._get_dir(self.custom_text_dir or self.path / "plaintext")
 
-def textpage_generator(
-    pages: Iter[Page],
-) -> Iter[TextPage]:
-    from fitz.utils import get_textpage_ocr
+    custom_results_dir: Path | None = None
 
-    return (
-        get_textpage_ocr(page)
-        for page in tqdm.tqdm(
-            iterable=pages,
-            desc="running optical character recognition",
-        )
-    )
+    @property
+    def results_dir(self) -> Path:
+        return self._get_dir(self.custom_results_dir or self.path / "analysis")
 
-
-def get_files(
-    input_dir: pl.Path,
-    output_folder: str = "plaintext",
-) -> tuple[Iter[Path], Iter[Path], Path]:
-    output_dir = input_dir.resolve(strict=True) / output_folder
-
-    try:
-        output_dir.mkdir()
-    except FileExistsError:
-        from .arguments import confirm
-
-        if not confirm("Overwrite existing plaintext files?"):
-            raise SystemExit(0)
-
-    input_files = [
-        file
-        for file in tqdm.tqdm(
-            iterable=input_dir.iterdir(),
-            desc="discovering pdfs",
-        )
-        if file.name.lower().endswith(".pdf")
-    ]
-
-    output_files = [output_dir / f"{f.stem}.txt" for f in input_files]
-
-    return input_files, output_files, output_dir / "metadata.json"
-
-
-def get_plaintexts(
-    input_files: Iter[Path],
-    page_ranges: dict[str, _PageRange],
-) -> list[str]:
-    return [
-        chr(12).join(
+    def _process_textpage_chunk(
+        self,
+        textpages: Iter[TextPage],
+    ) -> str:
+        return chr(12).join(
             textpage.extractText()
-            for textpage in tqdm.tqdm(
+            for textpage in track(
                 iterable=textpages,
                 desc="extracting plaintext",
             )
         )
-        for textpages in (
-            textpage_generator(pages)
-            for pages in pages_generator(input_files, page_ranges)
+
+    def _write_metadata_file(self, metadata: JSONDict) -> None:
+        from datetime import datetime, UTC
+
+        metadata["created_at"] = datetime.now(UTC).isoformat()
+        self._metadata = metadata
+        data_file = self.path / "metadata.json"
+        data_file.write_text(
+            data=json.dumps(metadata, indent=4),
+            encoding="utf-8",
         )
-    ]
 
+    def _extract_text(self) -> list[Path]:
+        """
+        Extracts text from all PDF files in a given directory and saves it to
+        corresponding .txt files.
 
-def get_metadata_json(
-    output_files: Iter[Path],
-    plaintexts: Iter[str],
-) -> str:
-    input_dir = next(iter(output_files)).parents[1]
-    metadata: dict[str, Any] = {
-        name: {
-            "source_uri": (input_dir / name.replace("txt", "pdf")).as_uri(),
-            "appx_tokens": ct,
-        }
-        for name, ct in (
-            (f.name, math.ceil(f.write_text(data=t, encoding="utf-8") / 4))
-            for f, t in zip(output_files, plaintexts, strict=True)
-        )
-    }
-    metadata["last_modified"] = datetime.now(dt.UTC).isoformat()
-    return json.dumps(metadata, indent=4)
+        Args:
+            directory (str): The path to the directory containing PDF files.
+            page_ranges (dict): The range arguments specifying the pages to include for each file. Defaults to (0, None, 1) for all files.
+        """
 
+        self.path = self.path.resolve(strict=True)
 
-def plaintext_from_pdfs(
-    directory: Path,
-    page_ranges: dict[str, _PageRange] | None = None,
-) -> None:
-    """
-    Extracts text from all PDF files in a given directory and saves it to
-    corresponding .txt files.
+        list_dir = [*self.path.iterdir()]
 
-    Args:
-        directory (str): The path to the directory containing PDF files.
-        page_ranges (dict): The range arguments specifying the pages to include for each file. Defaults to (0, None, 1) for all files.
-    """
-    pdfs, txts, metadata = get_files(directory)
-    ranges: dict[str, _PageRange] = {f.name: PageRange.ALL for f in pdfs}
-    ranges.update(page_ranges or {})
-    extracted = get_plaintexts(pdfs, ranges)
-    info = get_metadata_json(txts, extracted)
-    metadata.write_text(info, encoding="utf-8")
+        track.set_default_total(len(list_dir))
+
+        input_files = [
+            f
+            for f in track(
+                iterable=list_dir,
+                desc="gathering pdf files",
+            )
+            if f.name.lower().endswith(".pdf")
+        ]
+
+        chunk_generators = [
+            (fitz.utils.get_textpage_ocr(p) for p in pages)
+            for pages in track(
+                iterable=(fitz.open(f).pages() for f in input_files),
+                desc="running optical character recognition",
+            )
+        ]
+
+        text_generator = (self._process_textpage_chunk(c) for c in chunk_generators)
+        text_files: list[Path] = [self.text_dir / f"{f.stem}.txt" for f in input_files]
+
+        total: int = 0
+        metadata: JSONDict = {}
+        for f, text in track(
+            iterable=zip(text_files, text_generator, strict=True),
+            desc="extracting plaintexts",
+        ):
+            num_chars = f.write_text(text, encoding="utf-8")
+            total += num_chars
+            metadata[f.stem] = {
+                "source_uri": (self.path / f"{f.stem}.pdf").as_uri(),
+                "character_count": num_chars,
+            }
+
+        metadata["total_characters"] = total
+
+        self._write_metadata_file(metadata)
+
+        return text_files

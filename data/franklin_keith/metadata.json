@@ -1,0 +1,12 @@
+{
+    "ssm_health_dean": {
+        "source_uri": "file:///D:/pyprojects/medical-record-analysis/data/franklin_keith/ssm_health_dean.pdf",
+        "character_count": 21397
+    },
+    "unity_point_health_meriter": {
+        "source_uri": "file:///D:/pyprojects/medical-record-analysis/data/franklin_keith/unity_point_health_meriter.pdf",
+        "character_count": 125069
+    },
+    "total_characters": 146466,
+    "created_at": "2025-09-13T04:57:07.499589+00:00"
+}

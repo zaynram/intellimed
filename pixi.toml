@@ -13,6 +13,7 @@ ipywidgets = ">=8.1.7,<9"
 ipykernel = ">=6.30.1,<7"
 mypy = ">=1.17.1,<2"
 wxpython = ">=4.2.3,<5"
+pyinstaller = ">=6.15.0,<7"
 
 [pypi-options]
 

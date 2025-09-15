@@ -3,4 +3,5 @@
 !.pixi/config.toml
 build/
 dist/
-.*_cache/
+**/.*_cache/
+__pycache__/

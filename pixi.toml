@@ -6,6 +6,7 @@ platforms = ["win-64"]
 version = "0.1.0"
 
 [tasks]
+start = "python main.py"
 
 [dependencies]
 python = ">=3.12,<3.14"
@@ -14,8 +15,6 @@ ipykernel = ">=6.30.1,<7"
 mypy = ">=1.17.1,<2"
 wxpython = ">=4.2.3,<5"
 pyinstaller = ">=6.15.0,<7"
-
-[pypi-options]
 
 [pypi-dependencies]
 tqdm = "*"

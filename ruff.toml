@@ -28,7 +28,7 @@ exclude = [
   ".pixi",
 ]
 
-line-length = 88
+line-length = 95
 indent-width = 4
 
 target-version = "py313"

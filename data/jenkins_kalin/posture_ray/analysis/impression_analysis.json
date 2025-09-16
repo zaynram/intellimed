@@ -1,0 +1,32 @@
+{
+  "injuries": {
+    "verified": {
+      "Possible damage to the anterior longitudinal ligament": [
+        "damage",
+        "to",
+        "the",
+        "anterior",
+        "longitudinal",
+        "ligament"
+      ],
+      "Possible damage to the intervertebral disc": [
+        "damage",
+        "to",
+        "the",
+        "intervertebral",
+        "disc"
+      ]
+    },
+    "unverified": {
+      "Whiplash": ["Whiplash"],
+      "Possible damage to the anterior longitudinal ligament": ["Possible"],
+      "Possible damage to the intervertebral disc": ["Possible"]
+    }
+  },
+  "treatments": {
+    "verified": [],
+    "unverified": {
+      "Physical therapy sessions": ["Physical", "therapy", "sessions"]
+    }
+  }
+}

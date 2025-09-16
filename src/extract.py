@@ -1,43 +1,83 @@
 from __future__ import annotations
+from src.utils import track, console
+from src.typeshed import JSONDict
 
+import fitz
 import typing
 
 if typing.TYPE_CHECKING:
-    from .types import *
+    from .typeshed import *
 
-import json
-import fitz
-from .utils import track
+from pathlib import Path
+
+
+Metadata = typing.NamedTuple("Metadata", [("path", Path), ("json", JSONDict)])
 
 
 class Extractor:
     path: Path
 
-    _metadata: dict[str, Any]
+    _skip_extract: bool = False
+    _total_files: int
 
-    def _get_dir(self, path: Path) -> Path:
+    def set_total_files(self, total: int) -> None:
+        self._total_files: int = total
+        track.GLOBAL_TOTAL = total
+
+    def _rebase_file(
+        self,
+        file: str | Path,
+        *,
+        base_path: Path | None = None,
+        suffix: str | None = None,
+    ) -> Path:
+        orig_name = file if isinstance(file, str) else file.name
+
+        if suffix and not suffix.startswith("."):
+            raise ValueError("suffix must start with '.'")
+        elif not (suffix or "." in orig_name):
+            raise ValueError("invalid file extension")
+
+        stem = orig_name.rsplit(".")[0]
+        parts = (
+            (stem, suffix)
+            if suffix
+            else (stem, orig_name[idx:])
+            if (idx := orig_name.rindex("."))
+            else (None, None)
+        )
+
+        if parts == (None, None):
+            raise ValueError
+        else:
+            parts = typing.cast(tuple[str, str], parts)
+
+        return base_path or self.path / "".join(parts)
+
+    def _safe_get_directory(self, dirname: str, *, override: Path | None) -> Path:
+        path = (override or self.path) / dirname
         if not path.exists():
             path.mkdir()
-        elif [*path.iterdir()]:
-            from .utils import confirm
-
-            if not confirm(f"Overwrite existing files at '{path}'?"):
-                print("File processing aborted.", flush=True)
-                raise SystemExit(0)
-
+        elif any(path.iterdir()):
+            if not console.confirm(f"Overwrite existing files at '{path}'?"):
+                match dirname:
+                    case "analysis":
+                        raise SystemExit
+                    case "plaintext":
+                        self._skip_extract = True
         return path
 
     custom_text_dir: Path | None = None
 
     @property
     def text_dir(self) -> Path:
-        return self._get_dir(self.custom_text_dir or self.path / "plaintext")
+        return self._safe_get_directory("plaintext", override=self.custom_text_dir)
 
     custom_results_dir: Path | None = None
 
     @property
     def results_dir(self) -> Path:
-        return self._get_dir(self.custom_results_dir or self.path / "analysis")
+        return self._safe_get_directory("analysis", override=self.custom_results_dir)
 
     def _process_textpage_chunk(
         self,
@@ -48,18 +88,8 @@ class Extractor:
             for textpage in track(
                 iterable=textpages,
                 desc="extracting plaintext",
+                total=self._total_files,
             )
-        )
-
-    def _write_metadata_file(self, metadata: JSONDict) -> None:
-        from datetime import datetime, UTC
-
-        metadata["created_at"] = datetime.now(UTC).isoformat()
-        self._metadata = metadata
-        data_file = self.path / "metadata.json"
-        data_file.write_text(
-            data=json.dumps(metadata, indent=4),
-            encoding="utf-8",
         )
 
     def _extract_text(self) -> list[Path]:
@@ -74,18 +104,15 @@ class Extractor:
 
         self.path = self.path.resolve(strict=True)
 
-        list_dir = [*self.path.iterdir()]
+        text_dir = self.text_dir
 
-        track.set_default_total(len(list_dir))
+        if self._skip_extract:
+            text_files = [f for f in text_dir.iterdir() if f.suffix == ".txt" and f.is_file()]
+            self.set_total_files(len(text_files))
+            return text_files
 
-        input_files = [
-            f
-            for f in track(
-                iterable=list_dir,
-                desc="gathering pdf files",
-            )
-            if f.name.lower().endswith(".pdf")
-        ]
+        input_files = [f for f in self.path.iterdir() if f.suffix == ".pdf" and f.is_file()]
+        self.set_total_files(len(input_files))
 
         chunk_generators = [
             (fitz.utils.get_textpage_ocr(p) for p in pages)
@@ -95,24 +122,16 @@ class Extractor:
             )
         ]
 
-        text_generator = (self._process_textpage_chunk(c) for c in chunk_generators)
-        text_files: list[Path] = [self.text_dir / f"{f.stem}.txt" for f in input_files]
+        text_files = [text_dir / f"{f.stem}.txt" for f in input_files]
 
-        total: int = 0
-        metadata: JSONDict = {}
         for f, text in track(
-            iterable=zip(text_files, text_generator, strict=True),
+            iterable=zip(
+                text_files,
+                (self._process_textpage_chunk(c) for c in chunk_generators),
+                strict=True,
+            ),
             desc="extracting plaintexts",
         ):
-            num_chars = f.write_text(text, encoding="utf-8")
-            total += num_chars
-            metadata[f.stem] = {
-                "source_uri": (self.path / f"{f.stem}.pdf").as_uri(),
-                "character_count": num_chars,
-            }
-
-        metadata["total_characters"] = total
-
-        self._write_metadata_file(metadata)
+            f.write_text(text, encoding="utf-8")
 
         return text_files

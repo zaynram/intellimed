@@ -3,5 +3,10 @@
   "python-envs.pythonProjects": [],
   "workbench.colorTheme": "Eva Dark Bold",
   "python.pixiToolPath": "pixi",
-  "python.defaultInterpreterPath": ".pixi/envs/default/python.exe"
+  "python.defaultInterpreterPath": ".pixi/envs/default/python.exe",
+  "files.exclude": {
+    ".pixi": true,
+    ".mypy_cache": true,
+    "build": true
+  }
 }

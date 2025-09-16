@@ -1,0 +1,703 @@
+Exacting X-Ray Analysis
+Radiographic Impression Report
+Prepared for:
+KALIN JENKINS
+Patient #:
+JENKINSKALIN2025217000
+Insurance #:
+Gender:
+Female
+Date of Birth:
+6/26/1999
+Address:
+PLAINFIELD SPINE AND
+REHAB
+,
+Evaluation Date:
+2/7/2025
+Date X-Ray Taken: 12/14/2024
+Prepared by:
+SPECIALIZED RADIOLOGY CONSULTANTS
+1039 COLLEGE AVE  SUITE A
+WHEATON, Illinois
+60187
+HE) PostureRay
+lags
+.
+\
+io 7 ‘
+\
+’
+Gas
+\
+/
+300
+:
+15
+(|
+ates.
+SPECIALIZED RADIOLOGY CONSULTANTS
+1039 COLLEGE AVE  SUITE A, WHEATON, Illinois 60187 630-462-9772
+X-RAY Impressions and Biomechanics Report
+Lateral Cervical Projection
+Name: KALIN JENKINS
+X-Ray was obtained: 12/14/2024
+Date of Digitization: 2/7/2025
+Date of Birth: 6/26/1999
+Ms. KALIN JENKINS’s x-rays were analyzed utilizing the PostureRay® computerized X-ray digitizing system with impressions interpreted by JOHN A.
+AIKENHEAD, DC,DACBR. X-Ray digitization for spinal biomechanics has been shown to be valid when compared to standard hand drawn methods.
+The patient’s findings were then compared to established normals at each level and then globally. The X-Ray mensuration method used in analyzing
+this patient have been studied for reliability and validity and these results are as follows:
+Anterior
+Posterior
+This colored curved line represents the Normal Spinal Position and expected path of the posterior longitudinal
+ligament.
+This colored line represents the patient’s position and the path of the posterior longitudinal ligament.
+© PostureCo, Inc. All Rights Reserved | PostureCo.com
+™
+si
+ii Hl
+i)
+it hh
+Vf
+nT
+ee
+i ‘
+SPECIALIZED RADIOLOGY CONSULTANTS
+1039 COLLEGE AVE  SUITE A, WHEATON, Illinois 60187 630-462-9772
+X-RAY Impressions and Biomechanics Report
+Lateral Cervical Projection
+Spinal Biomechanics Compared to Normal
+Segments
+Analyzed
+RRA Normal
+Values
+RRA Patient
+Values
+Difference From
+Normal
+Segmental
+Translations
+C1 to Horiz.
+-29.0º
+-21.1º
+27.2%
+C2-C3
+-10.0º
+-9.9º
+1.0%
+0.6 mm
+C3-C4
+-8.0º
+2.3º
+128.8%
+-1.7 mm
+C4-C5
+-8.0º
+4.8º
+160.0%
+-1.0 mm
+C5-C6
+-8.0º
+-2.5º
+68.8%
+-1.3 mm
+C6-C7
+-8.0º
+-12.0º
+50.0%
+-3.5 mm
+* Values in Red Exceed Established Normal
+Global Analysis
+Normal Values
+Patient Values
+Diff. From
+Normal
+ARA C2-C7
+-42º
+-17.3º
+58.8%
+Translation C2-C7
+0 mm
+37.7 mm
+37.7 mm
+C7 Post. Tangent to Vert.
+21.5º
+29.1º
+35.3%
+T1 Post. Tangent to Vert.
+26.5º
+Not Digitized
+Not
+Digitized
+Sagital Balance C1-S1
+0 mm
+Not Digitized
+Not
+Digitized
+RRA = Relative Rotational Angle of Measurement
+ARA = Absolute Rotational Angle of Measurement
+Upper Cervical Measurements
+Normal Values
+Patient
+Values
+Clinical Significance
+Powers Ratio
+0.9 to 1
+Not
+Digitized
+Not Digitized
+Basilar Impression
+(McRae's method)
+n/a
+Not
+Digitized
+Not Digitized
+Atlanto-Dental Interspace
+≤ 3 mm
+2.2 mm
+WNL
+Spinal Canal Diameter
+> 13 mm
+25.5 mm
+WNL
+WNL = Within Normal Levels
+Impressions and Assessment
+The posterior tangent method of radiographic analysis has been studied extensively for both validity and reliability[1;2-5],
+and has been shown to be a superior method of analysis for biomechanical assessment over the Cobb method of x-ray
+analysis for sagittal cervical spine.[3]  Using this radiographic analysis technique, the normal cervical lordosis measured
+from C2-C7 for a normal average population was found to measure -34º with ideal alignment measuring  -42º.[1;2]  (Note
+that the negative sign preceding the measurement of degree indicates direction, thus the normal Lordotic/extended
+position and an abnormal flexion angle/kyphosis is noted by a positive angle). There is a statistically significant
+association between cervical pain and lordosis < -20º and a "clinically normal" range for cervical lordosis of -31º to -
+40º.[6]
+As noted in this computerized analysis, Ms. KALIN JENKINS's cervical spine measures -17.3º. According to recent
+research, Ms. KALIN JENKINS's cervical spine alignment is predictive of chronic neck pain.[1] This is a loss from the
+expected normal lordosis by 58.8%.  Regarding anterior cervical translation (weight bearing) findings of less than 15mm
+has been established as a normal.[1;2]  Ms. KALIN JENKINS has an abnormal anterior cervical translation from C2
+relative to C7 of 37.7mm.
+© PostureCo, Inc. All Rights Reserved | PostureCo.com
+SPECIALIZED RADIOLOGY CONSULTANTS
+1039 COLLEGE AVE  SUITE A, WHEATON, Illinois 60187 630-462-9772
+X-RAY Impressions and Biomechanics Report
+Lateral Cervical Projection
+References
+[1]
+Harrison DD, Harrison DE, Janik TJ et al. Modeling of the sagittal cervical spine as a method to discriminate hypolordosis: results of elliptical and circular modeling in 72
+asymptomatic subjects, 52 acute neck pain subjects, and 70 chronic neck pain subjects. Spine (Phila Pa 1976.) 2004;29:2485-92.
+[2]
+Harrison DD, Troyanovich SJ, Harrison DE et al. A normal sagittal spinal configuration: a desirable clinical outcome. J.Manipulative Physiol Ther. 1996;19:398-405.
+[3]
+Harrison DE, Harrison DD, Cailliet R et al. Cobb method or Harrison posterior tangent method: which to choose for lateral cervical radiographic analysis. Spine (Phila Pa
+1976.) 2000;25:2072-8.
+[4]
+Harrison DE, Holland B, Harrison DD et al. Further reliability analysis of the Harrison radiographic line-drawing methods: crossed ICCs for lateral posterior tangents and
+modified Risser-Ferguson method on AP views. J.Manipulative Physiol Ther. 2002;25:93-8.
+[5]
+Jackson BL, Harrison DD, Robertson GA et al. Chiropractic biophysics lateral cervical film analysis reliability. J.Manipulative.Physiol.Ther. 1993;16:384-91.
+[6]
+McAviney J, Schulz D, Bock R et al. Determining the relationship between cervical lordosis and neck complaints. J.Manipulative Physiol Ther. 2005;28:187-93.
+JOHN A. AIKENHEAD, DC,DACBR
+© PostureCo, Inc. All Rights Reserved | PostureCo.com
+SPECIALIZED RADIOLOGY CONSULTANTS
+1039 COLLEGE AVE  SUITE A, WHEATON, Illinois 60187 630-462-9772
+X-RAY Impressions and Biomechanics Report
+Lateral Cervical Flexion/Extension
+Name: KALIN JENKINS
+X-Ray was obtained: 12/14/2024
+Date of Digitization: 2/7/2025
+Date of Birth: 6/26/1999
+Ms. KALIN JENKINS’s x-rays were analyzed utilizing the PostureRay® computerized X-ray digitizing system with impressions interpreted by JOHN A.
+AIKENHEAD, DC,DACBR. X-Ray digitization for spinal biomechanics has been shown to be valid when compared to standard hand drawn methods.
+The patient’s findings were then compared to established normals at each level and then globally. The X-Ray mensuration method used in analyzing
+this patient have been studied for reliability and validity and these results are as follows:
+Flexion
+Anterior
+Posterior
+Extension
+Anterior
+Posterior
+This colored line represents the posterior tangent lines of mensuration  and exceeds normal allowable segmental motion indicating ligament laxity.
+This colored line represents the posterior tangent lines of mensuration and appears to be stable with no significant ligamentous laxity.
+© PostureCo, Inc. All Rights Reserved | PostureCo.com
+a
+ml
+cet
+bi
+fr ‘
+i,
+F
+}
+i
+i
+|
+,
+ail
+spain
+>
+|a
+"
+i
+aii
+|
+a
+|
+his
+i
+|
+a)
+i
+m
+i
+1
+i
+h
+i
+i
+a
+iM
+i
+,NOW
+et
+=.
+ee ee
+:
+j
+=
+°
+ml
+:
+v
+F
+Wi
+|
+willl
+\
+|
+/ ae
+i
+|
+N
+yi" rene
+.
+bag "
+iil
+TIN
+"
+TTA
+mi
+f
+ii
+al
+AM
+y
+i
+MIN
+i
+Mi
+Hi
+i
+.
+“a
+A
+wii we
+i)!
+NW,
+‘iil
+if
+f
+ie
+bly
+m
+il igl
+,
+ «
+_
+y
+Ni
+q
+i
+ij
+ft)
+alien
+lig
+"4
+ti,
+rm
+q
+|
+i
+i
+oa
+q
+a
+SPECIALIZED RADIOLOGY CONSULTANTS
+1039 COLLEGE AVE  SUITE A, WHEATON, Illinois 60187 630-462-9772
+X-RAY Impressions and Biomechanics Report
+Lateral Cervical Flexion/Extension
+Flexion/Extension Values
+Segment
+Flexion
+RRA
+Extension
+RRA
+Angular
+Excursion
+Flexion
+Transl.
+Extension
+Transl.
+Translational
+Excursion
+C1 to Horiz.
+3.1º
+-22.9º
+26.0º
+C2-C3
+-8.0º
+-12.4º
+4.4º
+0.0 mm
+-1.7 mm
+1.7 mm
+C3-C4
+6.5º
+8.2º
+-1.8º
+0.2 mm
+-0.5 mm
+0.7 mm
+C4-C5
+7.2º
+0.0º
+7.2º
+0.5 mm
+-0.8 mm
+1.3 mm
+C5-C6
+0.3º
+-3.0º
+3.3º
+0.3 mm
+-2.0 mm
+2.3 mm
+C6-C7
+-8.7º
+-2.3º
+-6.4º
+-1.6 mm
+-1.0 mm
+-0.6 mm
+RRA = Relative Rotational Angle of Measurement
+* Values in Red Exceed Established Normal
+Global Analysis
+Flexion
+Extension
+Global
+Excursion
+ARA C2-C7
+-2.8º
+-9.4º
+6.6º
+Translation C2-C7
+50.2 mm
+36.8 mm
+13.5 mm
+ARA = Absolute Rotational Angle of Measurement
+Upper Cervical Measurements -
+Flexion
+Normal Values
+Patient
+Values
+Clinical Significance
+Powers Ratio
+0.9 to 1
+Not
+Digitized
+Not Digitized
+Basilar Impression
+(McRae's method)
+n/a
+Not
+Digitized
+Not Digitized
+Atlanto-Dental Interspace
+≤ 3 mm
+3.0 mm
+WNL
+Spinal Canal Diameter
+> 13 mm
+23.4 mm
+WNL
+WNL = Within Normal Levels
+Upper Cervical Measurements -
+Extension
+Normal Values
+Patient
+Values
+Clinical Significance
+Powers Ratio
+0.9 to 1
+Not
+Digitized
+Not Digitized
+Basilar Impression
+(McRae's method)
+n/a
+Not
+Digitized
+Not Digitized
+Atlanto-Dental Interspace
+≤ 3 mm
+2.2 mm
+WNL
+Spinal Canal Diameter
+> 13 mm
+21.8 mm
+WNL
+WNL = Within Normal Levels
+Upper Cervical Measurements -
+Flexion + Extension
+Normal Values
+Patient
+Values
+Clinical Significance
+C0-C1 Instability
+< 25º
+Not
+Digitized
+Not Digitized
+C1-C2 Instability
+< 20º
+15.9º
+WNL
+WNL = Within Normal Levels
+© PostureCo, Inc. All Rights Reserved | PostureCo.com
+SPECIALIZED RADIOLOGY CONSULTANTS
+1039 COLLEGE AVE  SUITE A, WHEATON, Illinois 60187 630-462-9772
+X-RAY Impressions and Biomechanics Report
+Lateral Cervical Flexion/Extension
+Impressions and Assessment
+The posterior tangent method of radiographic analysis has been studied extensively for both validity and reliability[4-8],
+and has been shown to be a superior method of analysis for biomechanical assessment over the Cobb method of x-ray
+analysis for sagittal cervical spine.[6]  Normal values for intersegmental motion should not exceed more than 10-11º of
+angular motion.[9]  Using the posterior tangent method of radiographic analysis, motion that exceeds 10º has been
+shown to predict and discriminate minor ligamentous injuries from those patients with true whiplash type ligamentous
+injuries.[3]  Corroborating these findings using another method of analysis (inferior endplate assessment), an alteration
+of motion segment integrity (AOMSI) has been defined as motion at the level in question that is more than 11º greater
+than at either adjacent level.[1]  Regarding segmental translational movements, authors have noted that subluxation
+should be noted with a range of 1.0-3.0mm[2] of intersegmental movement with absolute clinical cutoff threshold value of
+3.5mm.[1;9]
+There is anterior widening of the intervertebral disc space at C2-C3 levels evidenced by excessive segmental
+extension, which indicates possible damage to the anterior longitudinal ligament and/or intervertebral disc at said level.
+Segmental flexion instability is noted at the following segments: none
+Segmental extension instability is noted at the following segments:  C2-C3 of -12.4º.
+Segmental subluxation for flexion is noted at the following segments:  C6-C7 with -1.6 mm.
+Segmental subluxation for extension is noted at the following segments:  C2-C3 with -1.7 mm, C5-C6 with -2.0 mm,
+C6-C7 with -1.0 mm.
+Segmental translational instability for flexion is noted at the following segments: none
+Segmental translational instability for extension is noted at the following segments: none
+According to the above biomechanical assessment, there are findings of alteration of motion segment integrity
+(AOMSI) at the following levels: C2-C3.  Consequently, this patient may be rateable for a permanent injury upon
+reaching maximal medical improvement.
+© PostureCo, Inc. All Rights Reserved | PostureCo.com
+SPECIALIZED RADIOLOGY CONSULTANTS
+1039 COLLEGE AVE  SUITE A, WHEATON, Illinois 60187 630-462-9772
+X-RAY Impressions and Biomechanics Report
+Lateral Cervical Flexion/Extension
+References
+[1]
+Guides to the Evaluation of Permanent Impairment, Fifth Edition.American Medical Association, 2000.
+[2]
+Green JD, Harle TS, Harris JH, Jr. Anterior subluxation of the cervical spine: hyperflexion sprain. AJNR Am.J.Neuroradiol. 1981;2:243-50.
+[3]
+Griffiths HJ, Olson PN, Everson LI et al. Hyperextension strain or "whiplash" injuries to the cervical spine. Skeletal Radiol. 1995;24:263-6.
+[4]
+Harrison DD, Harrison DE, Janik TJ et al. Modeling of the sagittal cervical spine as a method to discriminate hypolordosis: results of elliptical and circular modeling in 72
+asymptomatic subjects, 52 acute neck pain subjects, and 70 chronic neck pain subjects. Spine (Phila Pa 1976.) 2004;29:2485-92.
+[5]
+Harrison DD, Troyanovich SJ, Harrison DE et al. A normal sagittal spinal configuration: a desirable clinical outcome. J.Manipulative Physiol Ther. 1996;19:398-405.
+[6]
+Harrison DE, Harrison DD, Cailliet R et al. Cobb method or Harrison posterior tangent method: which to choose for lateral cervical radiographic analysis. Spine (Phila Pa
+1976.) 2000;25:2072-8.
+[7]
+Harrison DE, Holland B, Harrison DD et al. Further reliability analysis of the Harrison radiographic line-drawing methods: crossed ICCs for lateral posterior tangents and
+modified Risser-Ferguson method on AP views. J.Manipulative Physiol Ther. 2002;25:93-8.
+[8]
+Jackson BL, Harrison DD, Robertson GA et al. Chiropractic biophysics lateral cervical film analysis reliability. J.Manipulative.Physiol.Ther. 1993;16:384-91.
+[9]
+White AA, III, Johnson RM, Panjabi MM et al. Biomechanical analysis of clinical stability in the cervical spine. Clin.Orthop. 1975;85-96.
+JOHN A. AIKENHEAD, DC,DACBR
+© PostureCo, Inc. All Rights Reserved | PostureCo.com
+SPECIALIZED RADIOLOGY CONSULTANTS
+1039 COLLEGE AVE  SUITE A, WHEATON, Illinois 60187 630-462-9772
+X-RAY Impressions and Biomechanics Report
+AP Cervical Projection
+Name: KALIN JENKINS
+X-Ray was obtained: 12/14/2024
+Date of Digitization: 2/7/2025
+Date of Birth: 6/26/1999
+Ms. KALIN JENKINS’s x-rays were analyzed utilizing the PostureRay® computerized X-ray digitizing system with impressions interpreted by JOHN A.
+AIKENHEAD, DC,DACBR. X-Ray digitization for spinal biomechanics has been shown to be valid when compared to standard hand drawn methods.
+The patient’s findings were then compared to established normals at each level and then globally. The X-Ray mensuration method used in analyzing
+this patient have been studied for reliability and validity and these results are as follows:
+Right
+Left
+This colored line represents normal spinal position.
+This colored line represents the patient’s alignment and the
+projected centers of mass of the spine.
+Spinal Biomechanics Compared to Normal
+Global Analysis
+Normal Values
+Patient Values
+Difference From
+Normal
+RZA T3
+0º
+-2.9º
+2.9º
+CDA C3-T3
+0º
+5.1º
+5.1º
+Translation C3-T3
+0 mm
+-0.5 mm
+0.5 mm
+CDA = Cervico-dorsal Angle and is a measure of the mid cervical angle
+RZA = Rotation Angle relative to true vertical of the lower cervical and upper
+thoracic spine
+Impressions and Assessment
+As noted above in the table, Ms. KALIN JENKINS’s cervical spine
+is translated (listed) from plumb by 0.5 mm to the right. Of
+importance is that the patient has a mid neck abnormal angle of 5.1
+degrees to the right. The patient has an angular displacement from
+normal (plumb) of the lower cervical and upper thoracic spine of 2.9
+degrees to the left.
+JOHN A. AIKENHEAD, DC,DACBR
+© PostureCo, Inc. All Rights Reserved | PostureCo.com
+afl
+il
+(iW
+AN i)
+i ii
+I!
+i
+rit)
+Mii
+q
+i
+WA
+"
+il
+mi
+|
+,
+ae
+ee
+ii i i
+N\
+i
+W
+i
+ill \
+i NY
+i, \
+\
+Mi
+!
+(A
+|
+NW
+i
+MN
+AN
+|
+iN
+il wi
+yy
+i '
+|
+ANY
+iN
+‘Ny
+Wi
+i
+\
+|
+|
+iit
+‘i
+;
+N
+TWIN,
+LAAN
+MN Ny ny:
+i
+a
+whi
+(ul
+itt "i NWP
+ee
+il
+(IN
+‘Wii
+Mi
+yl
+i"
+i NA
+ii
+ii
+wit "
+N
++N
+AN
+WV
+\)
+wil i,
+NIN
+i
+oh
+wil NN i
+il A
+),
+Hl
+J
+4hie
+i, whe ,
+"
+(RR
+.
+BITE
+ii
+AMAA
+i
+ih
+" i
+i
+My
+f
+Hi.
+1
+Nit \
+fi
+i
+a
+if
+i)
+ol
+WN
+"
+mM
+Vo
+"ay
+r
+“a
+|
+¥
+any
+4
+.
+Ave
+Pee. -
+=

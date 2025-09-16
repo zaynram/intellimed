@@ -1,0 +1,10 @@
+{
+  "injuries": {
+    "verified": { "C6-C7 subluxation": ["C6-C7", "subluxation"] },
+    "unverified": {}
+  },
+  "treatments": {
+    "verified": {},
+    "unverified": {}
+  }
+}

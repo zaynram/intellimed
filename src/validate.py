@@ -1,74 +1,117 @@
 from __future__ import annotations
 
-import json
+import re
 import typing as ty
+from .utils import timings
+
+from .typeshed import ValidationSubject, ValidatedResult
 
 if ty.TYPE_CHECKING:
-    from .types import *
+    from .typeshed import *
 
 
 class ValidationDict(dict[ValidationSubject, ValidatedResult]):
+    """Runtime validation container.
+
+    Keeps the same external shape as `ValidatedResult` but is available at
+    runtime (the previous implementation only defined the class under
+    TYPE_CHECKING). This class also implements a confidence scoring algorithm
+    that favors consecutive n-gram matches.
+    """
+
     _subjects = ty.final(("injuries", "treatments"))
     _verdicts = ty.final(("verified", "unverified"))
 
-    plaintext: str
-    summary: ValidationSummary
-
-    def __init__(self, plaintext: str, analysis_results: dict[str, ty.Any]) -> None:
-        self.summary: ValidationSummary = dict.fromkeys(
-            self._subjects, dict.fromkeys(self._verdicts, 0)
-        )
+    def __init__(self, plaintext: str, analysis_results) -> None:
+        # counts are per-item (not per-token)
+        self.match_counts = {s: {v: 0 for v in self._verdicts} for s in self._subjects}
         self.plaintext = plaintext
         self.base_results = analysis_results
-        super().__init__(self)
-        self.update(
-            dict.fromkeys(
-                ("injuries", "treatments"),
-                dict.fromkeys(("verified", "unverified"), list[str]()),
-            )
-        )
+        super().__init__()
+        for s in self._subjects:
+            self[s] = {v: {} for v in self._verdicts}
 
     def _set(
-        self, item: str, subj: ValidationSubject, verdict: ValidationVerdict
+        self,
+        item: str,
+        matches: list[str],
+        confidence: float,
+        subj: ValidationSubject,
+        verdict: ValidationVerdict,
     ) -> None:
-        self[subj][verdict].append(item)
-        self.summary[subj][verdict] += 1
+        """Store the matched phrases for an item and increment per-item counts."""
+        self[subj][verdict][item] = confidence, matches
+        self.match_counts[subj][verdict] += 1
 
-    def validate(self) -> tuple[ty.Self, ValidationSummary]:
-        for subject in self._subjects:
-            for item in self.base_results.get(subject, []):
-                verdict = "verified" if item in self.plaintext else "unverified"
-                self._set(item, subject, verdict)
-        return self, self.summary
+    def _score_item(self, item_str: str, bonus_factor: float = 0.5) -> tuple[float, list[str]]:
+        """Compute a confidence score [0,1] and return the list of matched phrases.
 
+        Algorithm (greedy n-gram match):
+        - Tokenize the item and the plaintext into lowercase words.
+        - Walk the item tokens left-to-right and at each position greedily try the
+          longest n-gram (within the remaining tokens) that occurs in the
+          plaintext.
+        - Each matched n-gram of length r contributes r points (for the words)
+          plus a non-linear bonus proportional to r*(r-1)/2 scaled by
+          `bonus_factor`. This rewards longer consecutive matches.
+        - Normalize the raw score by the theoretical maximum for the item's
+          token length so the returned confidence is in [0,1].
+        """
 
-def validate_analysis_results(results_dir: Path) -> ValidationSummary:
-    validate_path = results_dir.parent.parent / "results.json"
+        token_re = re.compile(r"\w+", re.UNICODE)
+        words = token_re.findall(item_str.lower())
+        if not words:
+            return 0.0, []
 
-    results = {}
-    summary = {}
+        plaintext = self.plaintext.lower()
 
-    for f in results_dir.iterdir():
-        raw_results = json.loads(f.read_text(encoding="utf-8"))
+        i = 0
+        runs: list[int] = []
+        matched_phrases: list[str] = []
+        n = len(words)
 
-        if not isinstance(raw_results, dict):
-            from .utils import error
+        while i < n:
+            found_len = 0
+            # try longest n-gram first (greedy)
+            for L in range(n - i, 0, -1):
+                phrase = " ".join(words[i : i + L])
+                if phrase in plaintext:
+                    found_len = L
+                    matched_phrases.append(phrase)
+                    break
 
-            error(
-                "Could not parse analysis results.",
-                f"File: {f.as_uri()}",
-                exception=TypeError,
-            )
+            if found_len > 0:
+                runs.append(found_len)
+                i += found_len
+            else:
+                i += 1
 
-        text_name = f.stem.replace("_analysis.json", ".txt")
-        text_file = (results_dir.parent / text_name).resolve(strict=True)
+        base_matches = sum(runs)
+        # triangular bonus to favor longer consecutive runs
+        bonus = sum((r * (r - 1) / 2) * bonus_factor for r in runs)
+        raw_score = base_matches + bonus
 
-        plaintext = text_file.read_text(encoding="utf-8")
+        # theoretical maximum: all tokens matched in a single run
+        max_score = n + ((n * (n - 1) / 2) * bonus_factor)
+        confidence = float(raw_score / max_score) if max_score > 0 else 0.0
+        # clamp for safety
+        confidence = max(0.0, min(1.0, confidence))
 
-        results[f.stem], summary[f.stem] = ValidationDict(
-            plaintext, raw_results
-        ).validate()
+        return confidence, matched_phrases
 
-    validate_path.write_text(json.dumps(results, indent=4), encoding="utf-8")
+    @timings()
+    def validate(self, threshold: float = 0.5) -> tuple["ValidationDict", dict]:
+        """Validate base_results against plaintext and compute match_counts.
 
-    return summary
+        Returns (self, match_counts). Items with confidence >= threshold are
+        considered 'verified', others 'unverified'.
+        """
+
+        for subj in self._subjects:
+            for item in self.base_results.get(subj, ()):
+                item_str = str(item)
+                confidence, matches = self._score_item(item_str)
+                verdict = "verified" if confidence >= threshold and matches else "unverified"
+                self._set(item_str, matches, confidence, subj, verdict)
+
+        return self, self.match_counts

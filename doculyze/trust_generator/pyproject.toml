@@ -5,15 +5,15 @@ version = "2.2.0"
 description = "Trust generator application deriving a simplified intake to document generation pipeline based on WealthCounsel."
 readme      = "README.md"
 
-dependencies    = ["python-docx", "pydantic>=2", "reportlab", "pypdf>=4"]
-requires-python = ">=3.12"
+# NOTE: `ollama` is the official client (Apache-2.0, maintained by the
+# Ollama team). Do NOT replace with `ollama-python` (third-party,
+# abandoned 2024-01-17, four total releases). Per OCR spec §4.1.
+dependencies    = ["python-docx", "pydantic>=2", "reportlab", "pypdf>=4", "ollama>=0.6.1", "anthropic>=0.103.1"]
+requires-python = ">=3.12,<3.13"
 
     [project.scripts]
-    trust-generator     = "trust_generator.app:main"
-    trust-generator-cli = "trust_generator.dev:main"
-
-    [project.gui-scripts]
-    trust-generator-gui = "trust_generator.app:run_gui"
+    trust-generator     = "trust_generator._gui:main"
+    trust-generator-cli = "trust_generator._cli:main"
 
 [build-system]
 build-backend = "hatchling.build"
@@ -23,7 +23,29 @@ requires      = ["hatchling"]
 packages = ["src/trust_generator"]
 
 [tool.ruff]
-exclude = ["src/trust_generator/_legacy"]
+exclude = ["src/trust_generator/v2/_legacy"]
+
+# IDE pyright (LSP / Pylance) — points at the pixi env so imports resolve.
+# The CI/CD type-check gate runs mypy via `pixi run mypy`; this block
+# exists solely to keep the editor's pyright analyzer aligned with the
+# pixi-managed interpreter and packages.
+[tool.pyright]
+include          = ["src", "tests"]
+exclude          = ["**/__pycache__", "src/trust_generator/v2/_legacy"]
+venvPath         = "."
+venv             = ".pixi/envs/default"
+pythonVersion    = "3.12"
+typeCheckingMode = "basic"
+
+# Stub helpers (e.g. `_meta_diagnostic` in v3/diagnostics/loader.py) are
+# defined in an earlier cycle than their first caller per the diagnostics-
+# engine TDD plan. Suppress the editor "is not accessed" hint so partial
+# cycles don't show as false-positive dead code; the real correctness
+# gate is mypy + pytest, which would catch a genuinely unused symbol.
+reportUnusedFunction  = "none"
+reportUnusedVariable  = "none"
+reportUnusedParameter = "none"
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+markers = ["integration: live network/service tests, opt-in"]
+addopts = "-m 'not integration'"

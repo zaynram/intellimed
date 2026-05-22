@@ -1,13 +1,15 @@
 {
-    "include": ["src/trust_generator", "tests"],
-    "ignore": ["tests"],
-    "exclude": [
-        "src/trust_generator/_legacy",
-        "**/node_modules",
-        "**/__pycache__",
-        "**/.*",
-        ".venv"
-    ],
-    "extraPaths": ["src", "src/trust_generator/_legacy"],
-    "reportAttributeAccessIssue": "information"
+  "venvPath": [".pixi/envs"],
+  "venv": "default",
+  "include": ["src/trust_generator", "tests"],
+  "ignore": ["tests"],
+  "exclude": [
+    "src/trust_generator/_legacy",
+    "**/node_modules",
+    "**/__pycache__",
+    "**/.*",
+    ".venv"
+  ],
+  "extraPaths": ["src", "src/trust_generator/_legacy"],
+  "reportAttributeAccessIssue": "information"
 }

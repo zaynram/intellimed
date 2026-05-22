@@ -1,0 +1,28 @@
+{
+  "winner": "output_config",
+  "winner_log_files": [
+    "2026-05-19-185113-output_config-run1.json",
+    "2026-05-19-185113-output_config-run2.json",
+    "2026-05-19-185113-output_config-run3.json"
+  ],
+  "rationale": "both mechanisms 100% success, 0% refusals; mean measurement latency within ~20% (9.30s output_config vs 8.44s tool_use). G1-positive prior favors output_config (composes cleanly with extended thinking; spec \u00a78.4).",
+  "decided_at": "2026-05-19T13:52:24.624577-05:00",
+  "per_mechanism_stats": {
+    "tool_use": {
+      "measurement_mean_latency": 8.437,
+      "measurement_stdev_latency": 0.048,
+      "total_cost_usd": 0.0418,
+      "success_rate": 1.0,
+      "refusal_rate": 0.0
+    },
+    "output_config": {
+      "measurement_mean_latency": 9.3,
+      "measurement_stdev_latency": 1.877,
+      "total_cost_usd": 0.0352,
+      "success_rate": 1.0,
+      "refusal_rate": 0.0
+    }
+  },
+  "total_calls": 6,
+  "total_cost_usd_estimate": 0.077
+}

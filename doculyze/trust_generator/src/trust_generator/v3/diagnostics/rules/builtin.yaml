@@ -1,0 +1,31 @@
+- code: shares.sum_not_100
+  level: error
+  source: schema
+  context: both
+  message: "Beneficiary shares must sum to exactly 100%."
+  field_path: beneficiary_shares
+  expression: "trust.beneficiary_shares != [] and trust.beneficiary_shares_total != 100"
+  enabled: true
+
+- code: estate.crossed_cliff
+  level: warning
+  source: business_rule
+  context: both
+  message: "Estimated estate value crosses the Illinois cliff threshold; tax-planning attention required."
+  field_path: elections.estate_value_approximate
+  expression: |
+    trust.elections.estate_value_approximate != null
+    and (
+      (trust.trust_id.trust_type == "individual" and trust.elections.estate_value_approximate >= firm.estate_thresholds.single_hard)
+      or (trust.trust_id.trust_type == "joint" and trust.elections.estate_value_approximate >= firm.estate_thresholds.joint_hard)
+    )
+  enabled: true
+
+- code: extraction.placeholder_unfilled
+  level: warning
+  source: extraction
+  context: fill
+  message: "OCR low-confidence placeholder detected in statement of intent; verify and replace before generation."
+  field_path: text_blocks.statement_of_intent
+  expression: 'trust.text_blocks.statement_of_intent =~~ "\\[OCR_LOW_CONFIDENCE\\]"'
+  enabled: true

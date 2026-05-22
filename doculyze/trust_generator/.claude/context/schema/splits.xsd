@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:include schemaLocation="simple-types.xsd"/>
+
+  <!-- The <plan> child element inside <plan-splits>. -->
+  <xs:complexType name="_split_plan_entry">
+    <xs:attribute name="suffix" type="_plan_suffix" use="required">
+      <xs:annotation><xs:documentation>The plan-suffix appended to the group date+slug-stem to form the child plan-id. e.g., for group 2026-04-29-shared-firm-config, suffix foundation yields plan-id 2026-04-29-shared-firm-config-foundation.</xs:documentation></xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="cycles" type="_cycle_range" use="required">
+      <xs:annotation><xs:documentation>The spec-cycle ranges this child claims, in [§N.M..§N.K] form. Mixed forms allowed: [§6.1..§6.3,§6.10]. Single cycle: [§6.5].</xs:documentation></xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="depends-on" type="_suffix_list" use="required">
+      <xs:annotation><xs:documentation>Comma-separated list of sibling suffixes that must reach Green commits before this child can begin execution. Empty = no dependencies. References must be other suffixes in the same plan-splits document; sequence-multi-plan validates the references resolve.</xs:documentation></xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="worktree" type="_worktree_req" use="required">
+      <xs:annotation><xs:documentation>Worktree requirement. required = MUST run in an isolated worktree. not-required = blast-radius is disjoint from all concurrent siblings on top-level paths, OR overlaps inside a shared submodule. The two-value enum is intentional; there is no optional middle tier in v1. ingest-spec is the sole writer of this attribute.</xs:documentation></xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="worktree-reason" type="_long_desc" use="optional">
+      <xs:annotation><xs:documentation>When worktree=required, a one-sentence justification (e.g., "overlaps with cache plan on src/foo/cache.py imports"). Logically required when worktree=required and absent when worktree=not-required, but XSD 1.0 cannot express this conditional constraint — ingest-spec is the enforcement boundary.</xs:documentation></xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="blast-radius" type="_path_list" use="required">
+      <xs:annotation><xs:documentation>Semicolon-separated list of file paths this child will edit, relative to project root. Used by ingest-spec for overlap analysis and by sequence-multi-plan to validate the DAG. Glob expansion is not performed by the schema or the workflows — list explicit paths.</xs:documentation></xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="synopsis" type="_long_desc" use="required">
+      <xs:annotation><xs:documentation>One-line description (up to 250 characters) of this child's scope. Mirrored to plans.xml as the child plan's synopsis attribute.</xs:documentation></xs:annotation>
+    </xs:attribute>
+  </xs:complexType>
+
+  <!-- Root element. -->
+  <xs:element name="plan-splits">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="plan" type="_split_plan_entry" minOccurs="2" maxOccurs="unbounded"/>
+      </xs:sequence>
+      <xs:attribute name="spec" type="_path_required_nonempty" use="required">
+        <xs:annotation><xs:documentation>Path to the parent spec-md, relative to project root. Must be non-empty.</xs:documentation></xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="group-id" type="_slug" use="required">
+        <xs:annotation><xs:documentation>The plan-group id (date-prefixed slug). Mirrored to plans.xml as the plan-group id attribute.</xs:documentation></xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="generated-at" type="_timestamp" use="required">
+        <xs:annotation><xs:documentation>ISO-8601 timestamp when ingest-spec generated this file. Used for staleness detection.</xs:documentation></xs:annotation>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+</xs:schema>

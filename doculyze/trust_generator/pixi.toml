@@ -1,79 +1,122 @@
 [workspace]
-channels  = ["conda-forge"]
-platforms = ["win-64", "linux-64"]
-preview   = ["pixi-build"]
+    channels  = [ 'conda-forge' ]
+    platforms = [ 'win-64', 'linux-64' ]
+    preview   = [ 'pixi-build' ]
 
 [environments]
-default = ["dev"]
+    default = [ 'dev' ]
 
 [dependencies]
-python = ">=3.12"
+    python = '>=3.12,<3.13'
 
 [pypi-dependencies]
-trust-generator = { path = ".", editable = true }
-reportlab = "*"
-pypdf = ">=4"
+    trust-generator   = { path = '.', editable = true }
+    reportlab         = '*'
+    pypdf             = '>=4'
+    types-reportlab   = '>=4.4.10.20260408, <5'
+    pydantic-settings = '>=2.14,<3'
+    rule-engine       = '>=4.5.3,<5'
+    pyyaml            = '>=6,<7'
+    ollama            = '>=0.6.1'                        # OCR backend client (spec §4.1); NOT `ollama-python`
+    anthropic         = '>=0.103.1,<0.104'               # Anthropic Claude SDK (spec §5)
 
 [feature.dev]
+    [feature.dev.activation]
+        [feature.dev.activation.env]
+            TASK_EXCLUDE           = 'v2'
+            RUFF_IGNORE            = 'F401'
+            MYPY_EXTRA_ARGS        = '--pretty --python-version 3.12 --exclude-gitignore --exclude $TASK_EXCLUDE'
+            RUFF_EXTRA_ARGS        = '--preview --target-version py312 --ignore $RUFF_IGNORE --exclude $TASK_EXCLUDE'
+            PYTEST_EXTRA_ARGS      = '--ignore-glob **/$TASK_EXCLUDE'
+            # Dev-only: path to the IPEX-LLM Ollama bundle for GPU-accelerated OCR smoke.
+            # Override per-machine if the bundle version or location differs.
+            IPEX_OLLAMA_BUNDLE_DIR = '/home/ramda/.local/share/ollama'
 
     [feature.dev.dependencies]
-    pyinstaller = "*"
-    pyright     = "*"
-    pytest      = "*"
-    ruff        = "*"
+        pyinstaller = '*'
+        pytest      = '*'
+        ruff        = '*'
+        mypy        = '*'
+        jsonschema  = '>=4,<5'
+        freezegun   = '>=1.5,<2'
 
     [feature.dev.tasks]
-
         [feature.dev.tasks.build]
-        cmd     = "pixi build --quiet"
-        inputs  = ["src/trust_generator/**/*.py", "pyproject.toml"]
-        outputs = ["trust-generator-*.conda"]
+            cmd     = 'pixi build --quiet'
+            inputs  = [ 'src/trust_generator/**/*.py', 'pyproject.toml' ]
+            outputs = [ 'trust-generator-*.conda' ]
 
         [feature.dev.tasks.dist]
-        cmd = """pyinstaller \
-        --noconsole \
-        --name trust-generator \
-        --onefile src/trust_generator/app.py
-        """
-        depends-on = ["build"]
-        inputs = ["trust-generator-*.conda"]
-        outputs = ["trust-generator.spec", "dist/trust-generator.exe"]
+            args    = [
+                { arg = 'version', choices = [ 'v2', 'v3' ], default = 'v2' }
+            ]
+            cmd     = 'pyinstaller --noconsole --name trust-generator --onefile src/trust_generator/{{ version }}/app.py'
+            inputs  = [ 'trust-generator-*.conda' ]
+            outputs = [ 'trust-generator.spec', 'dist/trust-generator.exe' ]
 
         [feature.dev.tasks.bundle]
-        cmd = "python scripts/bundle.py"
-        depends-on = ["dist"]
-        inputs = [
-            "scripts/bundle.py",
-            "trust-generator.spec",
-            "dist/trust-generator.exe",
-        ]
-        outputs = ["dist/trust-generator.zip"]
+            cmd        = 'python scripts/bundle.py'
+            depends-on = [ 'dist' ]
+            inputs     = [
+                'scripts/bundle.py',
+                'trust-generator.spec',
+                'dist/trust-generator.exe',
+            ]
+            outputs    = [ 'dist/trust-generator.zip' ]
 
         [feature.dev.tasks.test]
-        cmd = "pytest tests/ -v"
+            args = [ { arg = 'match', default = 'test_' } ]
+            cmd  = 'pytest $PYTEST_EXTRA_ARGS -k {{ match }} -v'
+            cwd  = 'tests/'
+            env  = { OCR_SMOKE_FIXTURE_PATH = '../assets/handwriting-samples/pages/print.jpg' }
+
+        [feature.dev.tasks.fix]
+            args = [ { arg = 'include', default = 'src/ tests/' } ]
+            cmd  = 'ruff check --fix-only $RUFF_EXTRA_ARGS {{ include }}'
+
+        [feature.dev.tasks.fix-unsafe]
+            depends-on = [
+                { task = 'fix', args = [
+                    '{{ include }}',
+                    '--',
+                    '--unsafe-fixes'
+                ] }
+            ]
+            args       = [ { arg = 'include', default = 'src/ tests/' } ]
 
         [feature.dev.tasks.lint]
-        cmd = "ruff check src/ tests/"
+            depends-on = [ { task = 'fix', args = [ '{{ include }}' ] } ]
+            args       = [ { arg = 'include', default = 'src/ tests/' } ]
+            cmd        = 'ruff check $RUFF_EXTRA_ARGS {{ include }}'
 
         [feature.dev.tasks.format]
-        cmd = "ruff format src/ tests/"
+            args = [ { arg = 'include', default = 'src/ tests/' } ]
+            cmd  = 'ruff format {{ include }}'
 
-        [feature.dev.tasks.typecheck]
-        cmd = "pyright src/"
+        [feature.dev.tasks.mypy]
+            args = [ { arg = 'target', default = '.' } ]
+            cmd  = 'mypy $MYPY_EXTRA_ARGS {{ target }}'
+            cwd  = 'src/trust_generator/'
+
+        [feature.dev.tasks.check]
+            depends-on = [ 'lint', 'mypy', 'test' ]
 
 [package]
-
-name    = "trust-generator"
-version = "2.2.0"
+    name    = 'trust-generator'
+    version = '2.2.0'
 
     [package.build]
-    backend = { name = "pixi-build-python", version = "*" }
+        backend = { name = 'pixi-build-python', version = '*' }
 
     [package.host-dependencies]
-    hatchling = "*"
+        hatchling = '*'
 
     [package.run-dependencies]
-    pydantic    = ">=2"
-    python-docx = "*"
-    reportlab   = "*"
-    pypdf       = ">=4"
+        pydantic          = '>=2'
+        python-docx       = '*'
+        reportlab         = '*'
+        pypdf             = '>=4'
+        pydantic-settings = '>=2.14,<3'
+        rule-engine       = '>=4.5.3,<5'
+        pyyaml            = '>=6,<7'
+        ollama            = '>=0.6.1'     # OCR backend client (spec §4.1); NOT `ollama-python`

@@ -1,0 +1,7 @@
+[global]
+cache-dir     = '/tmp/rumdl-cache/'
+disable       = ['MD013', 'MD076']
+exclude       = [".claude/rules/*.md"]
+flavor        = 'github'
+line-length   = 120
+output-format = 'full'

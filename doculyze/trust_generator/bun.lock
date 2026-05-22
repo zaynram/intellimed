@@ -9,6 +9,8 @@
     },
   },
   "packages": {
-    "reactive-context-toolkit": ["reactive-context-toolkit@github:zaynram/reactive-context-toolkit#91896a9", { "optionalDependencies": { "rct-plugin-autonomous-ops": "workspace:*", "rct-plugin-issue-scope": "workspace:*", "rct-plugin-tasktools": "workspace:*", "rct-plugin-tmux": "workspace:*", "rct-plugin-track-work": "workspace:*" }, "bin": { "rct": "./src/cli/index.ts" } }, "zaynram-reactive-context-toolkit-91896a9", "sha512-mhSukgq5tPFLMtuxylRomzi3wMSbZ+FzPChG1WtgK1Zziwt8fGyv3n+OYK2MyeJoKTFvdE3U75JqQbSR+/6r3w=="],
+    "reactive-context-toolkit": ["reactive-context-toolkit@github:zaynram/reactive-context-toolkit#9cf2f7d", { "dependencies": { "validate-with-xmllint": "^1.2.1" }, "optionalDependencies": { "rct-plugin-read-guard": "workspace:*", "rct-plugin-tasktools": "workspace:*", "rct-plugin-track-work": "workspace:*" }, "bin": { "rct": "./src/cli/index.ts" } }, "zaynram-reactive-context-toolkit-9cf2f7d", "sha512-V/bmSR1Lc9ziEihAq+Zwge2DUrgWgGfVGGP5g/WJr9O8Vuw3v/bBFWzaR+V3wyd3cubmywY8xJg82DCXBgl06Q=="],
+
+    "validate-with-xmllint": ["validate-with-xmllint@1.2.1", "", {}, "sha512-uJwzrq0/8RDrDkgHnTVnb34PAKCbnehQkNCvD7GUaA8Pm5TK+Fe4fKjwJS0G/P7uYhiOQmqQw9Dhuk9eB1E53Q=="],
   }
 }

@@ -1,27 +1,136 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-    <xs:include schemaLocation="common.xsd" />
-    <xs:element name="reference">
-        <xs:complexType>
-            <xs:sequence>
-                <xs:element name="chores">
-                    <xs:complexType>
-                        <xs:sequence minOccurs="0">
-                            <xs:element name="chore">
-                                <xs:complexType mixed="true">
-                                    <xs:complexContent>
-                                        <xs:annotation>
-                                            <xs:documentation>Additional context and instructions.</xs:documentation>
-                                        </xs:annotation>
-                                        <xs:extension base="_entry" />
-                                    </xs:complexContent>
-                                </xs:complexType>
-                            </xs:element>
-                        </xs:sequence>
-                    </xs:complexType>
-                </xs:element>
+  <xs:include schemaLocation="common.xsd" />
+  <xs:complexType name="_chore"
+                  mixed="true">
+    <xs:complexContent>
+      <xs:annotation>
+        <xs:documentation>
+          Additional context and instructions. Convention-driven targets named in
+          the body (e.g., specific test-file locations) are non-binding — if the
+          existing project convention conflicts, the executor should follow
+          convention and note the deviation in session-feedback.
+        </xs:documentation>
+      </xs:annotation>
+      <xs:extension base="_entry">
+        <xs:sequence minOccurs="0"
+                     maxOccurs="unbounded">
+          <xs:element name="commit">
+            <xs:complexType>
+              <xs:attribute name="sha"
+                            type="_hash"
+                            use="required">
+                <xs:annotation>
+                  <xs:documentation>
+                    The abbreviated hash for this commit.
+                  </xs:documentation>
+                </xs:annotation>
+              </xs:attribute>
+              <xs:attribute name="scope"
+                            type="_short_desc"
+                            use="required">
+                <xs:annotation>
+                  <xs:documentation>
+                    Concise (&lt; 60 chars) statement describing the scope of this commit.
+                  </xs:documentation>
+                </xs:annotation>
+              </xs:attribute>
+              <xs:attribute name="role"
+                            use="optional">
+                <xs:annotation>
+                  <xs:documentation>
+                    Role of this commit relative to the chore's lifecycle.
+                    `contribution`: a partial-progress commit on the path to fulfillment
+                    (used only for multi-commit chores whose scope cannot be closed in
+                    a single commit). `amendment`: a post-fulfillment commit related to
+                    the chore's satisfaction — e.g., a follow-up adjustment to the
+                    fulfilling code, or the closure commit that flips chores.xml status
+                    and records the fulfillment attribute.
+                  </xs:documentation>
+                </xs:annotation>
+                <xs:simpleType>
+                  <xs:restriction base="xs:string">
+                    <xs:enumeration value="contribution"/>
+                    <xs:enumeration value="amendment"/>
+                  </xs:restriction>
+                </xs:simpleType>
+              </xs:attribute>
+            </xs:complexType>
+          </xs:element>
+        </xs:sequence>
+        <xs:attribute name="type"
+                      use="required">
+          <xs:annotation>
+            <xs:documentation>
+              Discriminator for chore classification: "code" = touches src/ or tests/; "simple" = metadata, schema, docs, or config only.
+            </xs:documentation>
+          </xs:annotation>
+          <xs:simpleType>
+            <xs:restriction base="xs:string">
+              <xs:enumeration value="code"/>
+              <xs:enumeration value="simple"/>
+            </xs:restriction>
+          </xs:simpleType>
+        </xs:attribute>
+        <xs:attribute name="origin"
+                      type="_short_desc"
+                      use="required">
+          <xs:annotation>
+            <xs:documentation>
+              Concise (&lt; 60 chars) explanation of why this chore exists. Captures
+              the motivating cause — including external triggers (e.g., "Amend
+              firm-config spec for diagnostics") — in prose, since the triggering
+              concern may be upstream of any commit and need not resolve to a
+              structured hash.
+            </xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="baseline"
+                      type="_hash"
+                      use="required">
+          <xs:annotation>
+            <xs:documentation>
+              The abbreviated hash identifying the codebase state this chore amends
+              from. Derivation rule: the most recent commit touching the chore's
+              target artifact prior to chore opening. For spec amendments, the
+              spec's last-modifying commit. For code amendments, the function's or
+              module's last-touching commit. When multiple artifacts are amended,
+              the commit touching the primary artifact.
+            </xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="fulfillment"
+                      type="_hash"
+                      use="optional">
+          <xs:annotation>
+            <xs:documentation>
+              The abbreviated hash of the commit that closes this chore. Derivation
+              rule: the first commit that admits sufficient completion of the
+              chore's scope. Subsequent related commits must carry
+              `&lt;commit role="amendment"/&gt;`. Required when status="closed",
+              absent when status="open" — the status/fulfillment cross-constraint
+              is not expressible in XSD 1.0 (the toolchain's supported level);
+              see in-file reminder at top of chores.xml.
+            </xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:element name="reference">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="chores">
+          <xs:complexType>
+            <xs:sequence minOccurs="0"
+                         maxOccurs="unbounded">
+              <xs:element name="chore"
+                          type="_chore" />
             </xs:sequence>
-            <xs:attributeGroup ref="REFERENCE"></xs:attributeGroup>
-        </xs:complexType>
-    </xs:element>
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+      <xs:attributeGroup ref="REFERENCE"></xs:attributeGroup>
+    </xs:complexType>
+  </xs:element>
 </xs:schema>

@@ -1,25 +1,23 @@
-# Trust Generator — Firm Configuration
-# Edit this file to change firm identity and default legal options.
-# This file is loaded on startup. If missing or corrupt, built-in defaults are used.
+#:schema ./firm-config.schema.json
+# Trust Generator v3 — Workstation-local firm configuration.
+#
+# Firm-wide sections (firm, jurisdiction, estate_thresholds, trustee_catalog,
+# diagnostics, guardianship, drafts) live in the OneDrive-synced shared file
+# at CONVENTIONAL_SHARED_CONFIG_PATH (see firm-config-design §5.6.2 +
+# shared-firm-config-design §5.2.2). This local file carries only the
+# per-workstation [user] identity (and optional [meta] annotations).
+#
+# Env-var overlay: TGV3_<SECTION>__<KEY> (double underscore as nested
+# delimiter). For dev/CI environments without OneDrive, point
+# TGV3_FIRM_SHARED_CONFIG at config/firm.shared.dev.toml.
 
-[firm]
-address_line1 = "3815 N Mulford Rd. 4"
-address_line2 = "Rockford, IL 61114"
-name          = "Crosby and Crosby LLP"
-phone         = "(815) 367-6432"
+[meta]
+# schema_version and comment are optional.
+# Additional keys under [meta] are permitted (forward-compat seam).
 
-[jurisdiction]
-# Default state and county used when the questionnaire doesn't specify.
-default_county = "Winnebago"
-default_state  = "Illinois"
-# State-specific statute reference used in Article 11 (Trustee's Powers).
-trust_code_citation = "Illinois Trust Code (760 ILCS 3/101, et seq.)"
-
-# NOTE: Election defaults (spendthrift, no-contest, distribution standard, etc.)
-# are defined in the Pydantic schema (src/trust_generator/schema.py Elections class).
-# They are not configurable here because changing legal defaults requires code review
-# to ensure the generated trust document remains legally sound.
-
-[drafts]
-# Auto-purge drafts older than this many days on startup.
-auto_purge_days = 90
+[user]
+# Per-workstation user identity (amendment A-5, 2026-04-24). The M365 account
+# prefix is hand-set pre-onboarding and substituted into audit_log_dir
+# (shared file) via the ${user.upn} sentinel (amendment A-6). Non-empty
+# string required.
+upn = "zramdass"

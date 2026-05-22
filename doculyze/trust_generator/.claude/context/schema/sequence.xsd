@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:include schemaLocation="simple-types.xsd"/>
+
+  <xs:simpleType name="_wave_mode">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="parallel"/>
+      <xs:enumeration value="sequential"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="_gate_cadence">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="per-cycle"/>
+      <xs:enumeration value="per-wave"/>
+      <xs:enumeration value="per-plan"/>
+      <xs:enumeration value="end-only"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="_review_cadence">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="per-cycle"/>
+      <xs:enumeration value="per-plan"/>
+      <xs:enumeration value="per-wave"/>
+      <xs:enumeration value="end-only"/>
+      <xs:enumeration value="disabled"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:complexType name="_wave_plan_ref">
+    <xs:annotation><xs:documentation>Reference to a child plan within a wave. Worktree requirement is NOT carried here — sequence-multi-plan re-derives it from the corresponding splits.xml entry's worktree attribute at execution time (single-writer principle: splits.xml is the canonical source for blast-radius-derived worktree decisions; carrying it on _wave_plan_ref would invite drift between the two documents).</xs:documentation></xs:annotation>
+    <xs:attribute name="suffix" type="_plan_suffix" use="required">
+      <xs:annotation><xs:documentation>Reference to a child plan's suffix from the corresponding splits.xml. Same _plan_suffix shape (alphanumeric+dash, no spaces, ≤40 chars).</xs:documentation></xs:annotation>
+    </xs:attribute>
+  </xs:complexType>
+
+  <xs:complexType name="_wave">
+    <xs:sequence>
+      <xs:element name="plan" type="_wave_plan_ref" minOccurs="1" maxOccurs="unbounded"/>
+    </xs:sequence>
+    <xs:attribute name="index" type="_int" use="required">
+      <xs:annotation><xs:documentation>Wave order, 1-indexed. Waves execute in ascending index order; sequence-multi-plan validates indices are contiguous starting at 1.</xs:documentation></xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="mode" type="_wave_mode" use="required">
+      <xs:annotation><xs:documentation>parallel = children may execute concurrently (each in its declared worktree, if required); sequential = children execute one at a time in declaration order. exec-multi-plan honors this when dispatching teammates.</xs:documentation></xs:annotation>
+    </xs:attribute>
+  </xs:complexType>
+
+  <xs:complexType name="_edge">
+    <xs:attribute name="from" type="_plan_suffix" use="required">
+      <xs:annotation><xs:documentation>Source child-plan suffix; must resolve to a sibling declared in the corresponding splits.xml. sequence-multi-plan validates resolution.</xs:documentation></xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="to" type="_plan_suffix" use="required">
+      <xs:annotation><xs:documentation>Target child-plan suffix; must resolve to a sibling declared in the corresponding splits.xml. sequence-multi-plan validates resolution.</xs:documentation></xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="reason" type="_long_desc" use="required">
+      <xs:annotation><xs:documentation>One-line justification for the dependency edge (e.g., "child B imports symbol X authored by child A"). Surfaces in lead-session reports and helps human reviewers audit the DAG. ≤250 chars.</xs:documentation></xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="symbol" type="_label" use="optional">
+      <xs:annotation><xs:documentation>Optional: the specific symbol/contract that crosses the boundary (e.g., a function, class, fixture name). Helps human reviewers and helps the lead detect symbol-overlap violations. Bounded to 30 chars (_label).</xs:documentation></xs:annotation>
+    </xs:attribute>
+  </xs:complexType>
+
+  <xs:complexType name="_gate">
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attribute name="kind" type="_gate_kind" use="required">
+          <xs:annotation><xs:documentation>Gate kind. project-test runs the project's test suite (e.g., "pixi run test"); project-check runs the project's lint/typecheck (e.g., "pixi run check"); invariant-check runs a custom invariant command from sequence.xml; peer-symbol-check verifies cross-plan symbol existence. Constrained to the closed _gate_kind enum — new categories require a schema bump.</xs:documentation></xs:annotation>
+        </xs:attribute>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+
+  <xs:complexType name="_invariant">
+    <xs:sequence>
+      <xs:element name="constraint" type="_long_desc" minOccurs="1" maxOccurs="1"/>
+      <xs:element name="enforcement" minOccurs="1" maxOccurs="1">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="gate" type="_gate" minOccurs="1" maxOccurs="unbounded"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+    </xs:sequence>
+    <xs:attribute name="id" type="_label" use="required">
+      <xs:annotation><xs:documentation>Stable identifier for this invariant (≤30 chars). Used in error messages and lead-session reports; may be referenced by other invariants in future schema iterations.</xs:documentation></xs:annotation>
+    </xs:attribute>
+  </xs:complexType>
+
+  <xs:complexType name="_execution_policy">
+    <xs:attribute name="wave-gate" type="_gate_cadence" use="required">
+      <xs:annotation><xs:documentation>When the project gate (e.g., `pixi run check`) is run during execution.</xs:documentation></xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="integration-checkpoint" type="_gate_cadence" use="required">
+      <xs:annotation><xs:documentation>When the lead validates cross-plan integration (running invariant gates).</xs:documentation></xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="code-review-checkpoint" type="_review_cadence" use="required">
+      <xs:annotation><xs:documentation>Theme B integration point. When `superpowers:code-review` is invoked. `disabled` is the Theme A pre-Theme-B default.</xs:documentation></xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="finishing-skill" type="_bool" use="required">
+      <xs:annotation><xs:documentation>Theme B integration point. Whether to invoke `superpowers:finishing-a-development-branch` after group close. Default `true` if any child has `worktree="required"`, else `false` (Theme B will replace this default with its own logic).</xs:documentation></xs:annotation>
+    </xs:attribute>
+    <!-- Theme B additions: all optional with schema-level defaults. Pre-Theme-B sequence.xml documents validate without modification. -->
+    <xs:attribute name="plan-review-cadence" type="_plan_review_cadence" use="optional" default="both">
+      <xs:annotation><xs:documentation>Cadence for reasoning-protocols:plan-review invocation during spec-to-multi-plan. per-teammate = Stage A only. stage-b-only = Stage B only. both = Stage A then Stage B (default). disabled = no plan-review (Theme A legacy behavior).</xs:documentation></xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="code-review-critical-action" type="_critical_action" use="optional" default="halt">
+      <xs:annotation><xs:documentation>Action taken when superpowers:code-review surfaces a Critical finding. halt (default) = executor halts immediately. refactor = executor opens a Refactor commit, re-runs review; if still Critical, halts. defer-chore = executor opens a follow-up chore and proceeds.</xs:documentation></xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="auto-delete-cleanup-branches" type="_bool" use="optional" default="false">
+      <xs:annotation><xs:documentation>Whether finishing-skill's per-child cleanup auto-deletes child branches without user confirmation. Default false (must opt-in for destructive action).</xs:documentation></xs:annotation>
+    </xs:attribute>
+  </xs:complexType>
+
+  <xs:element name="sequence">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="waves">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="wave" type="_wave" minOccurs="1" maxOccurs="unbounded"/>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="dependencies">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="edge" type="_edge" minOccurs="0" maxOccurs="unbounded"/>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="invariants">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="invariant" type="_invariant" minOccurs="0" maxOccurs="unbounded"/>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="execution-policy" type="_execution_policy" minOccurs="1" maxOccurs="1"/>
+      </xs:sequence>
+      <xs:attribute name="group-id" type="_slug" use="required"/>
+      <xs:attribute name="splits" type="_path_required_nonempty" use="required">
+        <xs:annotation><xs:documentation>Path to the splits.xml that this sequence is built atop. Must be non-empty.</xs:documentation></xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="generated-at" type="_timestamp" use="required"/>
+    </xs:complexType>
+  </xs:element>
+</xs:schema>

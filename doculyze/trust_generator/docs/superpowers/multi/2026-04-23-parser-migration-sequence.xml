@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-model href="../../../.claude/context/schema/sequence.xsd"?>
+<!--
+  Execution DAG for plan-group 2026-04-23-parser-migration.
+  Authored by sequence-multi-plan workflow on 2026-05-19.
+
+  Wave shape (from sequence_helpers.py wave-decompose against splits.xml):
+    Wave 1: [json-and-coercion]   — no deps
+    Wave 2: [docx]                — depends-on: json-and-coercion
+    Wave 3: [pdf]                 — depends-on: docx
+    Wave 4: [registry]            — depends-on: docx, pdf (transitively json-and-coercion)
+  All waves are single-plan; mode="sequential" documents "no concurrency
+  intended" rather than "concurrency forbidden" (with N=1 child per wave
+  the modes are operationally equivalent). The 4-step linear chain is a
+  consequence of the symbol producer/consumer topology: coercion helpers
+  must precede the parsers that import them; docx's _apply_post_promotion_
+  protocol refactor must precede pdf's import of the same helper; and
+  registry's parse_file dispatch must follow both leaf parsers.
+
+  Symbol edges manually curated from each plan-md's Out-of-scope tables,
+  the docx ↔ pdf peer-DM signature reconciliation logged in memory on
+  2026-05-18 (memory: project_extraction_backend_split — `_apply_post_
+  merge_resolution` 3→2 arg sig alignment), and registry's Cycle 9
+  __all__ extension. The extract-edges helper returned [] because the
+  plan-mds carry cross-plan ownership in prose tables rather than the
+  bullet shape `- <sibling>: <symbol> — <reason>` the helper regex parses
+  — same limitation noted in 2026-05-14-anthropic-extraction-backend-
+  sequence.xml.
+
+  Invariants encode six cross-plan concerns:
+    - post-promotion-protocol-sig: docx §6.6 cycle-4b refactor extracts
+      `_apply_post_promotion_protocol(result, parsed_trust_type,
+      parsed_marital_status)`; pdf §6.9 imports verbatim. Signature
+      drift breaks pdf silently.
+    - post-merge-resolution-sig: docx §6.8 ships `_apply_post_merge_
+      resolution(result, exclusions_string)` (2-arg form, peer-DM
+      aligned with pdf teammate 2026-05-18; CorporateTrustee
+      discrimination moves inside the helper via _is_entity_name).
+    - co-grantor-dematerialization: chore #37 amendment to spec §5.3
+      step 4 lives inside `_apply_post_promotion_protocol` (docx
+      §6.6). pdf inherits the rule by import, not reimplementation —
+      the §6.7 mutation tests in wave 2 are the authoritative
+      coverage source for the dematerialization branch.
+    - monotonic-init: src/trust_generator/v3/parsers/__init__.py is
+      created by json-and-coercion (W1) with `__all__ = ["parse_json"]`
+      and extended additively by registry (W4) to the full §5.2
+      surface. registry must not remove the W1-created parse_json
+      export.
+    - pdf-blast-radius: pdf cycle §6.9 imports from docx_parser.py
+      but never edits it. Cross-plan write into a sibling blast-radius
+      would breach invariant #6 (plan-executor edits only declared
+      surface) and warrants a chore opening, not silent absorption.
+    - predecessor-gate: each wave's start is gated on the prior
+      wave's child plan flipping status="closed" in plans.xml
+      (spec-pipeline invariant #5: lead commits per-child status
+      flips). Without this gate downstream waves could start before
+      the symbols they import exist.
+-->
+<sequence
+    group-id="2026-04-23-parser-migration"
+    splits="docs/superpowers/specs/2026-04-23-parser-migration-splits.xml"
+    generated-at="2026-05-19T12:02:29-05:00">
+  <waves>
+    <wave index="1" mode="sequential">
+      <plan suffix="json-and-coercion" />
+    </wave>
+    <wave index="2" mode="sequential">
+      <plan suffix="docx" />
+    </wave>
+    <wave index="3" mode="sequential">
+      <plan suffix="pdf" />
+    </wave>
+    <wave index="4" mode="sequential">
+      <plan suffix="registry" />
+    </wave>
+  </waves>
+  <dependencies>
+    <edge from="docx"
+          to="json-and-coercion"
+          symbol="_to_date"
+          reason="docx §6.8 imports _to_date for date-cell coercion in the flat-dict → TrustData step; authored by json-and-coercion §6.4 (Cycle 3)." />
+    <edge from="docx"
+          to="json-and-coercion"
+          symbol="_to_decimal"
+          reason="docx §6.8 imports _to_decimal for asset-value / equity / share-percent cells; authored by json-and-coercion §6.4 (Cycle 3)." />
+    <edge from="docx"
+          to="json-and-coercion"
+          symbol="_to_address"
+          reason="docx §6.8 imports _to_address for grantor / co_grantor / beneficiary address cells; authored by json-and-coercion §6.4 (Cycle 3)." />
+    <edge from="docx"
+          to="json-and-coercion"
+          symbol="_to_person_reference"
+          reason="docx §6.8 imports _to_person_reference for trustee / beneficiary name cells (includes placeholder-prefix strip + one-token entity trap); authored by json-and-coercion §6.4 (Cycle 3)." />
+    <edge from="pdf"
+          to="json-and-coercion"
+          symbol="_to_date"
+          reason="pdf §6.9 imports _to_date for AcroForm date-field coercion after _normalize_field_values; authored by json-and-coercion §6.4 (Cycle 3)." />
+    <edge from="pdf"
+          to="json-and-coercion"
+          symbol="_to_decimal"
+          reason="pdf §6.9 imports _to_decimal for AcroForm numeric fields (assets, percentages); authored by json-and-coercion §6.4 (Cycle 3)." />
+    <edge from="pdf"
+          to="json-and-coercion"
+          symbol="_to_address"
+          reason="pdf §6.9 imports _to_address for AcroForm address fields; authored by json-and-coercion §6.4 (Cycle 3)." />
+    <edge from="pdf"
+          to="json-and-coercion"
+          symbol="_to_person_reference"
+          reason="pdf §6.9 imports _to_person_reference for AcroForm name fields; authored by json-and-coercion §6.4 (Cycle 3)." />
+    <edge from="pdf"
+          to="docx"
+          symbol="_apply_post_promotion_protocol"
+          reason="pdf §6.9 imports docx's helper for trust_type / marital_status mutation + co_grantor materialization / dematerialization; 3-arg signature (result, parsed_trust_type, parsed_marital_status) extracted by docx §6.6 cycle-4b refactor." />
+    <edge from="pdf"
+          to="docx"
+          symbol="_apply_post_merge_resolution"
+          reason="pdf §6.9 imports docx's helper for disinheritance + CorporateTrustee discrimination; 2-arg signature (result, exclusions_string) — peer-DM aligned with docx teammate 2026-05-18 (memory `02:47 | v3.0.0`)." />
+    <edge from="registry"
+          to="json-and-coercion"
+          symbol="parse_json"
+          reason="registry §6.10 dispatch routes `.json` extensions to parse_json; §6.11 __init__.py re-exports the same name; authored by json-and-coercion §6.2 (Cycle 1)." />
+    <edge from="registry"
+          to="docx"
+          symbol="parse_docx"
+          reason="registry §6.10 dispatch routes `.docx` extensions to parse_docx with seed_initialized; §6.11 __init__.py re-exports; authored by docx §6.5 (Cycle 4a) and progressively expanded through §6.8." />
+    <edge from="registry"
+          to="pdf"
+          symbol="parse_pdf"
+          reason="registry §6.10 dispatch routes `.pdf` extensions to parse_pdf with seed_initialized; §6.11 __init__.py re-exports; authored by pdf §6.9." />
+  </dependencies>
+  <invariants>
+    <invariant id="post-promotion-protocol-sig">
+      <constraint>docx §6.6 cycle-4b refactor extracts `_apply_post_promotion_protocol(result, parsed_trust_type, parsed_marital_status)` in docx_parser.py; pdf §6.9 imports it. The 3-arg signature is binding — drift forces pdf re-execution.</constraint>
+      <enforcement>
+        <gate kind="peer-symbol-check">pixi run python -c "import inspect; from trust_generator.v3.parsers.docx_parser import _apply_post_promotion_protocol; sig = inspect.signature(_apply_post_promotion_protocol); params = list(sig.parameters.keys()); assert params == ['result', 'parsed_trust_type', 'parsed_marital_status'], f'signature drift: {params}'; print('ok')"</gate>
+      </enforcement>
+    </invariant>
+    <invariant id="post-merge-resolution-sig">
+      <constraint>docx §6.8 ships `_apply_post_merge_resolution(result, exclusions_string)` (2-arg form, peer-DM aligned with pdf 2026-05-18; CorporateTrustee discrimination moves inside via `_is_entity_name`). pdf §6.9 imports the 2-arg form.</constraint>
+      <enforcement>
+        <gate kind="peer-symbol-check">pixi run python -c "import inspect; from trust_generator.v3.parsers.docx_parser import _apply_post_merge_resolution; sig = inspect.signature(_apply_post_merge_resolution); params = list(sig.parameters.keys()); assert params == ['result', 'exclusions_string'], f'signature drift: {params}'; print('ok')"</gate>
+      </enforcement>
+    </invariant>
+    <invariant id="co-grantor-dematerialization">
+      <constraint>chore #37 dematerialization branch (spec §5.3 step 4 amendment) lives inside `_apply_post_promotion_protocol` in docx_parser.py. pdf inherits by import — pdf_parser.py MUST NOT reimplement. docx §6.7 mutation tests are the coverage source.</constraint>
+      <enforcement>
+        <gate kind="invariant-check">grep -q "result.co_grantor == GrantorInfo()" src/trust_generator/v3/parsers/docx_parser.py</gate>
+        <gate kind="peer-symbol-check">pixi run python -c "import ast, pathlib; tree = ast.parse(pathlib.Path('src/trust_generator/v3/parsers/pdf_parser.py').read_text()); src = pathlib.Path('src/trust_generator/v3/parsers/pdf_parser.py').read_text(); assert 'result.co_grantor == GrantorInfo()' not in src, 'pdf_parser.py reimplements dematerialization — must inherit via import'; print('ok')"</gate>
+        <gate kind="project-test">pixi run test -- v3/parsers/test_docx_parser.py -k post_promotion</gate>
+      </enforcement>
+    </invariant>
+    <invariant id="monotonic-init">
+      <constraint>`__init__.py` is created by json-and-coercion §6.2 with `__all__ = ["parse_json"]` and extended additively by registry §6.11 to `["parse_docx", "parse_file", "parse_json", "parse_pdf"]`. registry MUST NOT remove parse_json.</constraint>
+      <enforcement>
+        <gate kind="peer-symbol-check">pixi run python -c "from trust_generator.v3.parsers import parse_docx, parse_file, parse_json, parse_pdf; print('ok')"</gate>
+        <gate kind="invariant-check">pixi run python -c "import trust_generator.v3.parsers as p; assert set(p.__all__) == {'parse_docx', 'parse_file', 'parse_json', 'parse_pdf'}, f'__all__ drift: {p.__all__}'; print('ok')"</gate>
+      </enforcement>
+    </invariant>
+    <invariant id="pdf-blast-radius">
+      <constraint>pdf §6.9 imports `_apply_post_promotion_protocol` + `_apply_post_merge_resolution` from docx_parser.py but never edits it. pdf's declared blast-radius is `pdf_parser.py` + `test_pdf_parser.py`; any out-of-scope edit must open a chore.</constraint>
+      <enforcement>
+        <gate kind="peer-symbol-check">pixi run python -c "import ast, pathlib; tree = ast.parse(pathlib.Path('src/trust_generator/v3/parsers/pdf_parser.py').read_text()); names = {n.name for n in tree.body if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))}; forbidden = names &amp; {'_apply_post_promotion_protocol', '_apply_post_merge_resolution'}; assert not forbidden, f'pdf_parser.py reimplements docx-owned helpers: {sorted(forbidden)}'; print('ok')"</gate>
+        <gate kind="invariant-check">grep -q "from trust_generator.v3.parsers.docx_parser import" src/trust_generator/v3/parsers/pdf_parser.py</gate>
+      </enforcement>
+    </invariant>
+    <invariant id="predecessor-gate">
+      <constraint>each wave's start is gated on the prior wave's child plan(s) flipping status="closed" in plans.xml (spec-pipeline invariant #5: lead commits per-child status flips). W4 requires both docx and pdf closed.</constraint>
+      <enforcement>
+        <gate kind="invariant-check">test "$(xmllint --xpath 'count(//plan[@id=\"2026-04-23-parser-migration-json-and-coercion\" and @status=\"closed\"])' .claude/context/plans.xml)" = "1"</gate>
+        <gate kind="invariant-check">test "$(xmllint --xpath 'count(//plan[@id=\"2026-04-23-parser-migration-docx\" and @status=\"closed\"])' .claude/context/plans.xml)" = "1"</gate>
+        <gate kind="invariant-check">test "$(xmllint --xpath 'count(//plan[@id=\"2026-04-23-parser-migration-pdf\" and @status=\"closed\"])' .claude/context/plans.xml)" = "1"</gate>
+        <gate kind="project-check">pixi run check</gate>
+      </enforcement>
+    </invariant>
+  </invariants>
+  <execution-policy
+      wave-gate="per-wave"
+      integration-checkpoint="per-wave"
+      code-review-checkpoint="disabled"
+      finishing-skill="false"
+      code-review-critical-action="halt" />
+</sequence>

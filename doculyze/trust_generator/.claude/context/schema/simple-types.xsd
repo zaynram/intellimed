@@ -1,63 +1,131 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-    <xs:simpleType name="_str">
-        <xs:restriction base="xs:string" />
-    </xs:simpleType>
-    <xs:simpleType name="_int">
-        <xs:restriction base="xs:positiveInteger" />
-    </xs:simpleType>
-    <xs:simpleType name="_float">
-        <xs:restriction base="xs:decimal" />
-    </xs:simpleType>
-    <xs:simpleType name="_bool">
-        <xs:restriction base="xs:boolean" />
-    </xs:simpleType>
-    <xs:simpleType name="_label">
-        <xs:restriction base="xs:string">
-            <xs:maxLength value="30" />
+  <xs:simpleType name="_str">
+    <xs:restriction base="xs:string" />
+  </xs:simpleType>
+  <xs:simpleType name="_int">
+    <xs:restriction base="xs:positiveInteger" />
+  </xs:simpleType>
+  <xs:simpleType name="_index">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="(\d+)|(\d+\.\d+)" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="_float">
+    <xs:restriction base="xs:decimal" />
+  </xs:simpleType>
+  <xs:simpleType name="_bool">
+    <xs:restriction base="xs:boolean" />
+  </xs:simpleType>
+  <xs:simpleType name="_label">
+    <xs:restriction base="xs:string">
+      <xs:maxLength value="30" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="_long_desc">
+    <xs:restriction base="xs:string">
+      <xs:maxLength value="250" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="_short_desc">
+    <xs:restriction base="xs:string">
+      <xs:maxLength value="60" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="_slug">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="\d{4}-\d{2}-\d{2}-[a-zA-Z0-9-]+" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="_status">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="open|in-progress|closed" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="_hash">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="[a-f0-9]{4,39}" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="_path">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="(([a-zA-Z]:[/\\]|\\\\)([0-9a-zA-Z_\-. ]+[/\\]?)*)|([0-9a-zA-Z_\-\\/.][0-9a-zA-Z_\-\\/. ]*)|()" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="_timestamp">
+    <xs:union>
+      <xs:simpleType>
+        <xs:restriction base="xs:dateTime" />
+      </xs:simpleType>
+      <xs:simpleType>
+        <xs:restriction base="_str">
+          <xs:maxLength value="0" />
         </xs:restriction>
-    </xs:simpleType>
-    <xs:simpleType name="_long_desc">
-        <xs:restriction base="xs:string">
-            <xs:maxLength value="180" />
-        </xs:restriction>
-    </xs:simpleType>
-    <xs:simpleType name="_short_desc">
-        <xs:restriction base="xs:string">
-            <xs:maxLength value="60" />
-        </xs:restriction>
-    </xs:simpleType>
-    <xs:simpleType name="_slug">
-        <xs:restriction base="xs:string">
-            <xs:pattern value="\d{4}-\d{2}-\d{2}_[a-zA-Z0-9_]+" />
-        </xs:restriction>
-    </xs:simpleType>
-    <xs:simpleType name="_status">
-        <xs:restriction base="xs:string">
-            <xs:pattern value="open|in-progress|closed" />
-        </xs:restriction>
-    </xs:simpleType>
-    <xs:simpleType name="_hash">
-        <xs:restriction base="xs:string">
-            <xs:pattern value="[a-f0-9]{4,39}" />
-        </xs:restriction>
-    </xs:simpleType>
-    <xs:simpleType name="_path">
-        <xs:restriction base="xs:string">
-            <xs:pattern
-                value="([^/\s.]|\.[^/\s.]|\.\.[^/\s])[^/\s]*(/([^/\s.]|\.[^/\s.]|\.\.[^/\s])[^/\s]*)*" />
-        </xs:restriction>
-    </xs:simpleType>
-    <xs:simpleType name="_timestamp">
-        <xs:union>
-            <xs:simpleType>
-                <xs:restriction base="xs:dateTime" />
-            </xs:simpleType>
-            <xs:simpleType>
-                <xs:restriction base="_str">
-                    <xs:maxLength value="0" />
-                </xs:restriction>
-            </xs:simpleType>
-        </xs:union>
-    </xs:simpleType>
+      </xs:simpleType>
+    </xs:union>
+  </xs:simpleType>
+  <!-- Cycle range: matches "[§N.M..§N.K]" or "[§N.M]" or "[§N.M,§N.K]" or mixed "[§N.M..§N.K,§N.L]". Subsection (.M) is mandatory; bare "§N" is rejected because every spec cycle lives under a numbered subsection. -->
+  <xs:simpleType name="_cycle_range">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="\[§\d+\.\d+(\.\.§\d+\.\d+)?(,§\d+\.\d+(\.\.§\d+\.\d+)?)*\]" />
+    </xs:restriction>
+  </xs:simpleType>
+  <!-- Plan-suffix: alphanumeric+dash, no leading dash, no spaces. Examples: foundation, cache, integration, 9a, 9b, 9c. Used by splits.xml entries and sequence.xml wave references. -->
+  <xs:simpleType name="_plan_suffix">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="[a-zA-Z0-9][a-zA-Z0-9-]*" />
+      <xs:maxLength value="40" />
+    </xs:restriction>
+  </xs:simpleType>
+  <!-- Comma-separated suffix list (for depends-on). Empty allowed. -->
+  <xs:simpleType name="_suffix_list">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="(([a-zA-Z0-9][a-zA-Z0-9-]*)(,[a-zA-Z0-9][a-zA-Z0-9-]*)*)?" />
+    </xs:restriction>
+  </xs:simpleType>
+  <!-- Worktree requirement values. -->
+  <xs:simpleType name="_worktree_req">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="not-required" />
+      <xs:enumeration value="required" />
+    </xs:restriction>
+  </xs:simpleType>
+  <!-- Path that must be non-empty. Variant of _path for attributes where the empty string is invalid (i.e., everywhere except _plan_group/@sequence-md, which is legitimately empty before sequence-multi-plan runs). -->
+  <xs:simpleType name="_path_required_nonempty">
+    <xs:restriction base="_path">
+      <xs:minLength value="1" />
+    </xs:restriction>
+  </xs:simpleType>
+  <!-- Semicolon-separated path list. Each item must start with a non-whitespace, non-semicolon character. Promoted from splits.xsd so other schemas (e.g., a future chores blast-radius) can reuse it. -->
+  <xs:simpleType name="_path_list">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="[^;\s][^;]*(;[^;\s][^;]*)*" />
+    </xs:restriction>
+  </xs:simpleType>
+  <!-- Gate kind enum (cross-plan execution gate categories). Closed set; new categories require schema bump. -->
+  <xs:simpleType name="_gate_kind">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="project-test" />
+      <xs:enumeration value="project-check" />
+      <xs:enumeration value="invariant-check" />
+      <xs:enumeration value="peer-symbol-check" />
+    </xs:restriction>
+  </xs:simpleType>
+  <!-- Theme B: plan-review invocation cadence (per-teammate Stage A, stage-b-only, both, or disabled). -->
+  <xs:simpleType name="_plan_review_cadence">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="per-teammate" />
+      <xs:enumeration value="stage-b-only" />
+      <xs:enumeration value="both" />
+      <xs:enumeration value="disabled" />
+    </xs:restriction>
+  </xs:simpleType>
+  <!-- Theme B: action taken on a Critical code-review finding during exec-{plan,multi-plan}. -->
+  <xs:simpleType name="_critical_action">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="halt" />
+      <xs:enumeration value="refactor" />
+      <xs:enumeration value="defer-chore" />
+    </xs:restriction>
+  </xs:simpleType>
 </xs:schema>

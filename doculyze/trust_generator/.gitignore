@@ -1,7 +1,8 @@
-__pycache__
-.pytest_cache
-.ruff_cache
+**/__pycache__
+**/.pytest_cache
+**/.ruff_cache
 
+dist
 build
 node_modules
 
@@ -16,6 +17,16 @@ node_modules
 .vscode/settings.json
 
 # Local tool state
+.claude/.cache/
 .claude/worktrees/
 .task_orchestrator/
 uv.lockvenv/
+
+# Draft Prompts, Templates, and Handoffs
+docs/.prompts/
+
+# Hardware/runtime debug dumps (Intel Graphics Compiler, etc.)
+igdrcl_dumped.config
+
+# Custom
+tests/**/*.jsonl

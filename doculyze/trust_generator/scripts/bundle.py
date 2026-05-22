@@ -1,6 +1,7 @@
 import pathlib
-import zipfile
 import shutil
+import zipfile
+
 
 def main():
     cwd = pathlib.Path.cwd()

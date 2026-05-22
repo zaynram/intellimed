@@ -1,0 +1,25 @@
+# Trust Generator — Firm Configuration
+# Edit this file to change firm identity and default legal options.
+# This file is loaded on startup. If missing or corrupt, built-in defaults are used.
+
+[firm]
+address_line1 = "3815 N Mulford Rd. 4"
+address_line2 = "Rockford, IL 61114"
+name          = "Crosby and Crosby LLP"
+phone         = "(815) 367-6432"
+
+[jurisdiction]
+# Default state and county used when the questionnaire doesn't specify.
+default_county = "Winnebago"
+default_state  = "Illinois"
+# State-specific statute reference used in Article 11 (Trustee's Powers).
+trust_code_citation = "Illinois Trust Code (760 ILCS 3/101, et seq.)"
+
+# NOTE: Election defaults (spendthrift, no-contest, distribution standard, etc.)
+# are defined in the Pydantic schema (src/trust_generator/schema.py Elections class).
+# They are not configurable here because changing legal defaults requires code review
+# to ensure the generated trust document remains legally sound.
+
+[drafts]
+# Auto-purge drafts older than this many days on startup.
+auto_purge_days = 90

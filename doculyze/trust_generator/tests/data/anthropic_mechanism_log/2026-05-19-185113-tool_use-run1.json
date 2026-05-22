@@ -1,0 +1,20 @@
+{
+  "run_id": "2026-05-19-185113-tool_use-run1",
+  "fixture": "assets/handwriting-samples/pages/print.jpg",
+  "mechanism": "tool_use",
+  "model": "claude-sonnet-4-6",
+  "thinking_budget_tokens": 5000,
+  "latency_seconds": 10.223,
+  "input_tokens": 10,
+  "output_tokens": 650,
+  "thinking_tokens": 0,
+  "cache_read_input_tokens": 0,
+  "cache_creation_input_tokens": 3241,
+  "cost_usd_estimate": 0.0219,
+  "success": true,
+  "refusal": false,
+  "schema_valid": true,
+  "trace_field_count": 10,
+  "error_message": null,
+  "cache_role": "priming"
+}

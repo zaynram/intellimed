@@ -1,0 +1,365 @@
+{
+  "$defs": {
+    "Address": {
+      "description": "Structured address. Geocoding populates lat/lon when OSM lookup succeeds.",
+      "properties": {
+        "city": {
+          "default": "",
+          "title": "City",
+          "type": "string"
+        },
+        "country": {
+          "default": "US",
+          "title": "Country",
+          "type": "string"
+        },
+        "latitude": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Latitude"
+        },
+        "longitude": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Longitude"
+        },
+        "state": {
+          "default": "",
+          "title": "State",
+          "type": "string"
+        },
+        "street": {
+          "default": "",
+          "title": "Street",
+          "type": "string"
+        },
+        "zip_code": {
+          "default": "",
+          "title": "Zip Code",
+          "type": "string"
+        }
+      },
+      "title": "Address",
+      "type": "object"
+    },
+    "Diagnostics": {
+      "additionalProperties": false,
+      "description": "Diagnostic enforcement (spec §5.5).",
+      "properties": {
+        "allow_force_generation": {
+          "default": true,
+          "title": "Allow Force Generation",
+          "type": "boolean"
+        },
+        "audit_log_dir": {
+          "default": "logs/audit",
+          "format": "path",
+          "title": "Audit Log Dir",
+          "type": "string"
+        },
+        "audit_log_rotation": {
+          "default": "monthly",
+          "enum": [
+            "monthly",
+            "weekly",
+            "daily"
+          ],
+          "title": "Audit Log Rotation",
+          "type": "string"
+        },
+        "default_restriction_level": {
+          "default": "error",
+          "enum": [
+            "info",
+            "warning",
+            "error"
+          ],
+          "title": "Default Restriction Level",
+          "type": "string"
+        },
+        "rules_dir": {
+          "default": "config/rules",
+          "format": "path",
+          "title": "Rules Dir",
+          "type": "string"
+        }
+      },
+      "title": "Diagnostics",
+      "type": "object"
+    },
+    "Drafts": {
+      "additionalProperties": false,
+      "description": "Preserved from v2 (spec §5.7).",
+      "properties": {
+        "auto_purge_days": {
+          "default": 90,
+          "exclusiveMinimum": 0,
+          "title": "Auto Purge Days",
+          "type": "integer"
+        }
+      },
+      "title": "Drafts",
+      "type": "object"
+    },
+    "EstateThresholds": {
+      "additionalProperties": false,
+      "description": "IL estate-tax cliff parameters (spec §5.3).\n\nIllinois taxes the entire excess above threshold (cliff). The soft\nthresholds gate detail-collection prompts; the hard thresholds drive the\nblocking diagnostic; ``approaching_cliff_ratio`` sets the near-cliff warning.",
+      "properties": {
+        "approaching_cliff_ratio": {
+          "default": 0.9,
+          "exclusiveMaximum": 1,
+          "exclusiveMinimum": 0,
+          "title": "Approaching Cliff Ratio",
+          "type": "number"
+        },
+        "joint_hard": {
+          "default": 8000000,
+          "exclusiveMinimum": 0,
+          "title": "Joint Hard",
+          "type": "integer"
+        },
+        "joint_soft": {
+          "default": 6000000,
+          "exclusiveMinimum": 0,
+          "title": "Joint Soft",
+          "type": "integer"
+        },
+        "single_hard": {
+          "default": 4000000,
+          "exclusiveMinimum": 0,
+          "title": "Single Hard",
+          "type": "integer"
+        },
+        "single_soft": {
+          "default": 3000000,
+          "exclusiveMinimum": 0,
+          "title": "Single Soft",
+          "type": "integer"
+        }
+      },
+      "title": "EstateThresholds",
+      "type": "object"
+    },
+    "FirmIdentity": {
+      "additionalProperties": false,
+      "description": "Firm identity and office location (spec §5.1).\n\n``office_address`` reuses the v3 ``Address`` model as-is per amendment A-1.",
+      "properties": {
+        "name": {
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "office_address": {
+          "$ref": "#/$defs/Address"
+        },
+        "phone": {
+          "minLength": 1,
+          "title": "Phone",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "phone",
+        "office_address"
+      ],
+      "title": "FirmIdentity",
+      "type": "object"
+    },
+    "Guardianship": {
+      "additionalProperties": false,
+      "description": "Guardianship policy default (spec §5.6).",
+      "properties": {
+        "default_policy": {
+          "default": "EXPLICIT_DESIGNATIONS",
+          "enum": [
+            "DELEGATE_TO_TRUSTEES",
+            "EXPLICIT_DESIGNATIONS"
+          ],
+          "title": "Default Policy",
+          "type": "string"
+        }
+      },
+      "title": "Guardianship",
+      "type": "object"
+    },
+    "Jurisdiction": {
+      "additionalProperties": false,
+      "description": "Legal/jurisdictional defaults (spec §5.2).",
+      "properties": {
+        "default_county": {
+          "default": "Winnebago",
+          "title": "Default County",
+          "type": "string"
+        },
+        "default_state": {
+          "default": "Illinois",
+          "title": "Default State",
+          "type": "string"
+        },
+        "trust_code_citation": {
+          "default": "Illinois Trust Code (760 ILCS 3/101, et seq.)",
+          "title": "Trust Code Citation",
+          "type": "string"
+        }
+      },
+      "title": "Jurisdiction",
+      "type": "object"
+    },
+    "Meta": {
+      "additionalProperties": true,
+      "description": "Forward-compatibility seam (firm-config-design §5.8).\n\nUses ``extra='allow'`` so future v3.x additions or firm-side annotations\nunder ``[meta]`` never trigger validation errors. Every other section in\n``FirmConfig`` remains ``extra='forbid'`` to catch typos.",
+      "properties": {
+        "comment": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Comment"
+        },
+        "schema_version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Schema Version"
+        }
+      },
+      "title": "Meta",
+      "type": "object"
+    },
+    "TrusteeCatalog": {
+      "additionalProperties": false,
+      "description": "Corporate trustee catalog (spec §5.4).\n\n``db_path``, ``audit_log_dir``, and similar paths are resolved to absolute\npaths by the loader against the config file's parent directory. Relative\npaths here are pre-resolution placeholders.",
+      "properties": {
+        "db_path": {
+          "default": "data/trustee_catalog.sqlite",
+          "format": "path",
+          "title": "Db Path",
+          "type": "string"
+        },
+        "fdic_api_base": {
+          "default": "https://banks.data.fdic.gov/api",
+          "format": "uri",
+          "maxLength": 2083,
+          "minLength": 1,
+          "title": "Fdic Api Base",
+          "type": "string"
+        },
+        "fdic_request_timeout_s": {
+          "default": 30,
+          "exclusiveMinimum": 0,
+          "title": "Fdic Request Timeout S",
+          "type": "integer"
+        },
+        "radius_miles": {
+          "default": 100,
+          "exclusiveMinimum": 0,
+          "title": "Radius Miles",
+          "type": "integer"
+        },
+        "refresh_days": {
+          "default": 30,
+          "exclusiveMinimum": 0,
+          "title": "Refresh Days",
+          "type": "integer"
+        }
+      },
+      "title": "TrusteeCatalog",
+      "type": "object"
+    },
+    "User": {
+      "additionalProperties": false,
+      "description": "Per-workstation user identity (amendment A-5, 2026-04-24).\n\nThe ``upn`` field is the M365 account prefix used for audit-log\nattribution and for post-parse substitution into ``diagnostics.audit_log_dir``\n(amendment A-6). Format validation is explicitly the onboarding workflow's\nresponsibility and not enforced here; the load-time gate rejects empty or\nwhitespace-only values because a blank UPN silently corrupts audit-log\nattribution and substituted paths (``str_strip_whitespace`` collapses\n``\"   \"`` into ``\"\"``, which then fails ``min_length=1``).",
+      "properties": {
+        "upn": {
+          "minLength": 1,
+          "title": "Upn",
+          "type": "string"
+        }
+      },
+      "required": [
+        "upn"
+      ],
+      "title": "User",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Full typed firm configuration, composed of nested sections.\n\nSee ``load_firm_config`` for loader semantics. Do not construct directly\noutside tests.",
+  "properties": {
+    "diagnostics": {
+      "$ref": "#/$defs/Diagnostics"
+    },
+    "drafts": {
+      "$ref": "#/$defs/Drafts"
+    },
+    "estate_thresholds": {
+      "$ref": "#/$defs/EstateThresholds"
+    },
+    "firm": {
+      "$ref": "#/$defs/FirmIdentity"
+    },
+    "guardianship": {
+      "$ref": "#/$defs/Guardianship"
+    },
+    "jurisdiction": {
+      "$ref": "#/$defs/Jurisdiction"
+    },
+    "meta": {
+      "$ref": "#/$defs/Meta"
+    },
+    "trustee_catalog": {
+      "$ref": "#/$defs/TrusteeCatalog"
+    },
+    "user": {
+      "$ref": "#/$defs/User"
+    }
+  },
+  "required": [
+    "user",
+    "firm"
+  ],
+  "title": "FirmConfig",
+  "type": "object",
+  "x-tombi-string-formats": [
+    "uri"
+  ],
+  "x-tombi-table-keys-order": [
+    "meta",
+    "user",
+    "firm",
+    "jurisdiction",
+    "estate_thresholds",
+    "trustee_catalog",
+    "diagnostics",
+    "guardianship",
+    "drafts"
+  ],
+  "x-tombi-toml-version": "1.0.0"
+}

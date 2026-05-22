@@ -115,3 +115,17 @@ Computed properties on `TrustData`: `trust_name`, `trust_date`, `trustee_names`,
 - **Firm config GUI settings screen**: Edit `firm.toml` values from within the GUI
 - **SSN field masking/encryption**: Mask SSN display in the GUI and encrypt at rest in drafts
 - **Complete PDF questionnaire**: Add list fields (children, assets) and elections to fillable PDF
+
+### v3 Firm Configuration (`config/firm.toml`)
+
+**Location.** Hand-edited firm configuration lives at `config/firm.toml`, anchored by a `#:schema ./firm-config.schema.json` directive that tombi (and any JSON-Schema-aware TOML LSP) uses for edit-time validation. The canonical key reference is in `docs/superpowers/specs/2026-04-21-firm-config-design.md`.
+
+**Env-var overlay.** Any field can be overridden at runtime via an environment variable prefixed `TGV3_` with `__` as the nested delimiter. Example: `TGV3_ESTATE_THRESHOLDS__SINGLE_HARD=5000000` overrides `estate_thresholds.single_hard` without editing the file. Env overlay sits above TOML in the precedence order (env > TOML > Pydantic defaults).
+
+**Schema regeneration.** The JSON Schema at `config/firm-config.schema.json` is a generated artifact, derived from the same Pydantic models the loader validates against. After any change to `src/trust_generator/v3/config/firm.py`, regenerate with:
+
+```bash
+pixi run python scripts/generate_firm_config_schema.py
+```
+
+The pytest suite includes a freshness test (`test_on_disk_schema_matches_generator_byte_equal`) that fails if the checked-in schema drifts from the generator output. If it fails, regenerate and re-commit.

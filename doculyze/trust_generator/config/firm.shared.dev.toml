@@ -1,0 +1,64 @@
+# Dev-environment template for the shared firm.toml file.
+#
+# This file is intentionally checked in. Production paralegal workstations
+# load the shared file from the OneDrive-synced SharePoint library at
+# CONVENTIONAL_SHARED_CONFIG_PATH; this template exists for environments
+# without OneDrive sync (WSL development, CI, future automated agents).
+#
+# Usage: export TGV3_FIRM_SHARED_CONFIG=$(realpath config/firm.shared.dev.toml)
+#
+# See config/README.md for the full dev-environment onboarding workflow.
+
+[meta]
+# schema_version and comment are optional.
+# Additional keys under [meta] are permitted (forward-compat seam).
+
+[firm]
+name  = "Crosby and Crosby LLP"
+phone = "(815) 367-6432"
+
+  [firm.office_address]
+  street   = "3815 N Mulford Rd. 4"
+  city     = "Rockford"
+  state    = "IL"
+  zip_code = "61114"
+  # country defaults to "US"; latitude/longitude resolved on demand.
+
+[jurisdiction]
+default_state       = "Illinois"
+default_county      = "Winnebago"
+trust_code_citation = "Illinois Trust Code (760 ILCS 3/101, et seq.)"
+
+[estate_thresholds]
+single_soft              = 3_000_000
+joint_soft               = 6_000_000
+single_hard              = 4_000_000
+joint_hard               = 8_000_000
+approaching_cliff_ratio  = 0.90
+
+[trustee_catalog]
+# db_path must be absolute or tilde-prefixed on the shared side per spec §5.3.7.3.
+db_path       = "~/Crosby and Crosby LLP/internal-applications - trust-generator/firm/data/trustee_catalog.sqlite"
+radius_miles  = 100
+refresh_days  = 30
+fdic_api_base = "https://banks.data.fdic.gov/api"
+
+[diagnostics]
+default_restriction_level = "error"
+allow_force_generation    = true
+# audit_log_dir resolves per amendments A-4 and A-6 (2026-04-24):
+#   1. ${user.upn} is replaced by the validated [user] upn value.
+#   2. A leading ~ expands to the current user's home directory.
+#   3. Relative remainder is resolved against this config file's parent.
+# Production destination is the per-user subfolder of the SharePoint library
+# synced by OneDrive (see diagnostics-engine spec §11.1).
+audit_log_dir             = "~/Crosby and Crosby LLP/internal-applications - trust-generator/users/${user.upn}/logs"
+audit_log_rotation        = "monthly"
+# rules_dir must be absolute or tilde-prefixed on the shared side per spec §5.3.7.3.
+rules_dir                 = "~/Crosby and Crosby LLP/internal-applications - trust-generator/firm/config/rules"
+
+[guardianship]
+default_policy = "EXPLICIT_DESIGNATIONS"
+
+[drafts]
+auto_purge_days = 90

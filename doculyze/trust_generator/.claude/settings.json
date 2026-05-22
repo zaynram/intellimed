@@ -2,6 +2,9 @@
   "permissions": {
     "defaultMode": "bypassPermissions"
   },
+  "worktree": {
+    "baseRef": "head"
+  },
   "hooks": {
     "SessionStart": [
       {
@@ -19,6 +22,16 @@
           {
             "type": "command",
             "command": "bun rct hook PreToolUse"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bun rct hook PostToolUse"
           }
         ]
       }

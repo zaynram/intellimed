@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-model href="../../../.claude/context/schema/splits.xsd"?>
+<!--
+  Plan-splits for plan-group index 14. Authored by ingest-spec during the
+  override re-ingest on 2026-05-15 after manual threshold re-evaluation
+  put the spec at the HARD tier (>9 files, ~22 cycle rows, complexity ~7).
+  threshold_check.py's "below" verdict was misleading because the spec
+  routes implementation cycles through §7 (not the helper's §6 assumption).
+
+  cycles attribute notes:
+  - The _cycle_range regex restricts the inner integer to digit-only
+    (`§\d+\.\d+`); the spec's letter-suffixed sub-cycles (1a/1b, 10a-f,
+    13a/13b) are collapsed to their parent cycle here. Every sub-cycle
+    group sits entirely inside one child, so collapsing loses no boundary
+    information for THIS split.
+  - Discussion of cycle-id letter-suffix support is tracked in chores
+    under "spec-pipeline convention-drift discussion".
+-->
+<plan-splits
+    spec="docs/superpowers/specs/2026-05-14-anthropic-extraction-backend-design.md"
+    group-id="2026-05-14-anthropic-extraction-backend"
+    generated-at="2026-05-15T19:40:38-05:00">
+  <plan
+      suffix="core"
+      cycles="[§7.1..§7.7,§7.10..§7.10,§7.14..§7.14]"
+      depends-on=""
+      worktree="not-required"
+      blast-radius="src/trust_generator/v3/extraction/__init__.py;src/trust_generator/v3/extraction/prompt.py;src/trust_generator/v3/extraction/prompt_ollama.py;src/trust_generator/v3/extraction/prompt_anthropic.py;src/trust_generator/v3/extraction/anthropic_backend.py;tests/v3/extraction/test_anthropic_backend.py;pyproject.toml"
+      synopsis="Plan A.1: prompt-module split, AnthropicGenerationEnvelope models, forked mappers, AnthropicBackend ctor + extract() pipeline + dual-mechanism seam + 10a-10f error mapping + Protocol conformance. Working backend safe to ship at endpoint." />
+  <plan
+      suffix="instrumentation"
+      cycles="[§7.8..§7.9,§7.11..§7.13,§7.15..§7.15]"
+      depends-on="core"
+      worktree="not-required"
+      blast-radius="src/trust_generator/v3/extraction/anthropic_backend.py;tests/v3/extraction/test_anthropic_backend.py;tests/v3/extraction/test_anthropic_backend_integration.py;tests/data/anthropic_mechanism_log"
+      synopsis="Plan A.2: PDF size/page prechecks, image source branch, prompt-caching + extended-thinking call-args, mechanism benchmark, integration smoke. Depends on core; landed atop the working backend from Plan A.1." />
+</plan-splits>

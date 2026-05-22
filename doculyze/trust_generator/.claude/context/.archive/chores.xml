@@ -1,0 +1,469 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-model href="schema/chores.xsd"?>
+<!-- NOTE: update the modified-at attribute after editing this file -->
+<reference name="chores"
+           path=".claude/context/chores.xml"
+           context="Canonical reference for outstanding chores for the project. Chores are small actionable items that need to be addressed, but do not take priority over active development work."
+           created-at="2026-04-16T23:15:36-05:00"
+           modified-at="2026-05-13T18:30:00-05:00">
+  <chores>
+    <!-- NOTE:
+    <chore/> attributes
+    - `synopsis` length cannot exceed 250 characters
+    - `baseline` = last commit touching target artifact prior to chore opening
+    - `fulfillment` = first commit admitting sufficient scope completion
+       * required when status="closed" (must respect at authoring time)
+    <chore/> body content
+    - high-level description only: what the bug/issue is, why it's interesting (root cause, why latent, surprise factor), and the fix's blast radius
+    - NOT prescriptive: file/line edits, code snippets, and exhaustive symbol or path lists belong in the dispatch prompt (open chores) or in `git log` + commit diffs (closed chores)
+    - target ~3 paragraphs max; the body is what a reader of chores.xml months later sees as canonical reference, not an implementation guide
+    <commit/> attributes
+    - `role` = "contribution" (pre-fulfillment progress) OR "amendment" (post-fulfillment adjustment)
+    -->
+    <chore index="1"
+           id="2026-04-23-asset-summary-loopvar-rename"
+           status="closed"
+           type="code"
+           expendable="true"
+           synopsis="Rename `TrustData.asset_summary()` loop variables in v3/schema.py to distinct names, silencing mypy loop-variable-reuse errors that were blocking the `pixi run check` gate for the promote_seed refinement plan."
+           origin="Unblock promote_seed plan"
+           baseline="52fcef3"
+           fulfillment="0bc7c17">
+      `TrustData.asset_summary()` had six sequential for-loops reusing the variable names `p` and `v` across differently-typed asset lists. mypy narrowed each variable from the first loop's type and rejected later reassignments, producing 8 errors (`assignment` and `attr-defined`) that blocked the `pixi run check` gate. Fix: rebind each loop to a distinct, descriptive name. No behavior change. Pre-plan unblocking commit for plan 3 (`2026-04-23-promote-seed`), outside its §8.2 scope lock but required for its gate to pass.
+    </chore>
+    <chore index="2"
+           id="2026-04-24-firm-config-amendments-a4-a6"
+           status="closed"
+           type="code"
+           expendable="false"
+           synopsis="Amendments A-4/A-5/A-6 to firm-config spec per diagnostics §13: tilde expansion on Path fields; required `[user] upn` section; `${user.upn}` post-parse substitution in `diagnostics.audit_log_dir`. Single-commit amendment pass per spec §13.5/§13.6."
+           origin="Amend firm-config spec for diagnostics"
+           baseline="5aef962"
+           fulfillment="1022fa1">
+      <commit sha="6e70083"
+              scope="Close A-4/A-5/A-6 chore"
+              role="amendment" /> The diagnostics-engine spec (§11, §13) specifies audit-log persistence in terms of three `firm.toml` surfaces that do not yet exist: a `[user]` section with a `upn` field, tilde expansion in path resolution, and loader-side `${user.upn}` post-parse substitution in `diagnostics.audit_log_dir`. Because the firm-config spec is the authoritative source for `firm.toml`, the surfaces must be added by amending firm-config (not diagnostics). Three amendments land as a single atomic change set per the asset-summary-loopvar precedent: A-4 extends `_resolve_paths` with `Path.expanduser()` for all Path fields; A-5 adds a `User(BaseModel)` with a non-empty `upn` validator wired into `FirmConfig`; A-6 substitutes `${user.upn}` in `diagnostics.audit_log_dir` prior to expanduser/resolve. Existing test fixtures gain a `[user]` block. Blocks downstream diagnostics-engine plans (plans index 7 and 8) that depend on the new FirmConfig surface. </chore>
+    <chore index="3"
+           id="2026-04-24-loader-exception-boundary"
+           status="closed"
+           type="code"
+           expendable="true"
+           synopsis="Wrap `_resolve_paths` calls in `load_firm_config` so `OSError`/`RuntimeError` from `Path.expanduser()` and `Path.resolve()` surface as `FirmConfigError`, honoring the §7 exception-contract documented in the firm-config spec."
+           origin="Surface FirmConfigError on path resolution"
+           baseline="1022fa1"
+           fulfillment="bbc883c">
+      <commit sha="795608f"
+              scope="Close loader-exception-boundary chore"
+              role="amendment" /> Surfaced during code review of the A-4/A-5/A-6 amendment pass (chore index 2). `Path.expanduser()` raises `RuntimeError` for unresolvable home prefixes and `Path.resolve()` can raise `OSError` on pathological filesystem states; both currently escape `_resolve_paths` unwrapped, bypassing the `FirmConfigError` contract documented in firm-config spec §7. Production exposure is narrow (the `audit_log_dir` always starts with `~/Crosby and Crosby LLP/...`) but the contract leak is real. Fix: wrap the `_resolve_paths` call in `load_firm_config` in a single try/except that surfaces both as `FirmConfigError`, plus one regression test. </chore>
+    <chore index="4"
+           id="2026-04-24-diagnostics-spec-cycle8-summary-realign"
+           status="closed"
+           type="simple"
+           expendable="false"
+           synopsis="Realign diagnostics spec §14.1's cycle-8 summary with §6.9's authoritative cycle definition. §14.1 reads `WARNING/ERROR with approaching-cliff variant`; §6.9 specifies a single WARNING-level `crossed_cliff` rule using `*_hard` thresholds only."
+           origin="2026-04-23-diagnostics-engine-rules plan composition"
+           baseline="676b106"
+           fulfillment="bfc7265">
+      §14.1's plan-boundary table summarizes Cycle 8 as `estate.crossed_cliff — DiagnosticSource.BUSINESS_RULE, WARNING/ERROR with approaching-cliff variant`, but §6.9 (the authoritative cycle definition) specifies only a single WARNING-level rule firing on `&gt;= single_hard` / `&gt;= joint_hard`. The §14.1 wording reads as a pre-split aspirational summary that did not get reconciled when §6.9 was finalized at single-rule scope. The firm config does carry `*_soft` thresholds + `approaching_cliff_ratio`, so an "approaching" variant has surface to consume — but that's a future scope expansion, not a present spec gap.
+      Resolve in one of two directions: (a) drop the WARNING/ERROR + approaching-cliff wording from §14.1 to match §6.9 (minimum-disturbance fix); (b) add a §6.9b for an `estate.approaching_cliff` rule and re-tier `crossed_cliff` to ERROR (re-litigates §6.9's WARNING rationale; belongs in its own plan). Simple-chore (docs only); should not block the rules plan.
+    </chore>
+    <chore index="5"
+           id="2026-04-24-diagnostics-spec-cycle9-regex-operator-fix"
+           status="closed"
+           type="simple"
+           expendable="false"
+           synopsis="Realign diagnostics spec §6.10's `extraction.placeholder_unfilled` rule expression operator"
+           origin="2026-04-23-diagnostics-engine-rules plan-review"
+           baseline="676b106"
+           fulfillment="bfc7265">
+      §6.10's YAML rule expression uses the regex-MATCH operator `=~` (anchored at position 0 in rule-engine 4.5.3), but the same section's test 4 requires regex-SEARCH semantics ("regex matches anywhere in the string"). The Cycle 1 integration fixture places the marker at position 0 of `statement_of_intent`, which masks the inconsistency at the integration level (the marker matches under either operator). Surfaced by reading library source during plan-review.
+      The rules plan (plans index 8) deviates from the spec literal by emitting `=~~` (regex-search) in `builtin.yaml` to honor §6.10 test 4's documented semantics. Fix: amend §6.10's rule expression `=~` → `=~~`. Simple-chore (docs only); should land soon to keep spec and code aligned.
+    </chore>
+    <chore index="6"
+           id="2026-04-25-cycle4-evaluator-cleanup"
+           status="closed"
+           type="code"
+           expendable="true"
+           synopsis="Cycle 4 evaluator code-quality cleanup: hoist `rule_engine` import in test, drop unused `pytest`, add dedicated test pinning the 3rd `EvaluationError` catch clause, and document the 4th `TypeError` workaround in the `evaluate()` docstring."
+           origin="Cycle 4 code-quality review"
+           baseline="7ea3834"
+           fulfillment="a0ac1df">
+      Surfaced during the code-quality review of plan 7 Task 4 (Cycle 4 — rule evaluator). Reviewer flagged one substantive coverage gap and several pure-polish nits; substantive ones bundled here.
+      Substantive: `test_evaluator_eval_error_meta` actually exercises the 4th `except TypeError` clause (a defensive workaround for a rule-engine 4.5.3 truncation bug), not the 3rd `except EvaluationError` parent clause its name suggests — leaving an arm of the catch ladder untested. Fix: add `test_evaluator_evaluation_error_branch` using `trust.x / trust.y` with `y=0` to drive a bare `EvaluationError` through the 3rd clause.
+      Polish bundled: hoist `rule_engine` import in the test (matches loader.py's module-level convention), drop unused `pytest` import, and document the 4th `TypeError` workaround in `evaluate()`'s docstring. Test-helper extraction (`_NOW`, `_make_ctx`, `_make_rule`) deferred to Cycle 5/6 once patterns repeat enough to justify a conftest fixture.
+    </chore>
+    <chore index="7"
+           id="2026-04-26-diagnostics-core-plan-md-staleness"
+           status="closed"
+           type="simple"
+           expendable="true"
+           synopsis="Realign diagnostics-engine-core plan-md with executed reality: pixi task args are positional (not key=value); BeneficiaryShare uses recipient_ref/share_percent (not beneficiary_name); Cycle 5 test 6 should match spec §6.6's atomic-write-per-line."
+           origin="Cycle 7 plan-execution post-mortem"
+           baseline="6c3a8e8"
+           fulfillment="73dd3bb">
+      Surfaced during execution of plan 7 (`2026-04-23-diagnostics-engine-core`). The plan-md as committed at `6c3a8e8` carried three template stalenesses that misled subagent dispatches mid-session and required mid-flight corrections. Bundled here so a single fix-pass lands before the plan-md is referenced by future readers or replayed by automation.
+      (1) Pixi task arguments are positional, not `name=value`. Multiple cycle templates wrote `pixi run test match=...` and `pixi run mypy target=...`; the correct form is `pixi run test test_eval_context` / `pixi run mypy v3/diagnostics`. The `name=value` form is silently treated as a literal positional and matches no tests, masking failures during dry runs. (2) `BeneficiaryShare` has no `beneficiary_name` field — the actual field is `recipient_ref`. The Cycle 2 template uses `beneficiary_name=`; the actually-landed test uses `recipient_ref` correctly, but the template was never reconciled. (3) Cycle 5 test 6 listed as `test_dir_creation_on_write`, but spec §6.6 mandates `test_atomic_write_per_line` (concurrent JSONL append exercising POSIX `O_APPEND` atomicity ≤ `PIPE_BUF`); spec §6.6 is authoritative.
+      Simple-chore (docs only); should land before any future replay or external reference.
+    </chore>
+    <chore index="8"
+           id="2026-04-26-force-generation-docstring-and-edge-cases"
+           status="closed"
+           type="code"
+           expendable="true"
+           synopsis="Tighten force_generation/validate_override_reason: document no-user-parameter security rationale + overridden_codes dedup contract; surface actual length in reason error; coerce whitespace-only file_number to 'unidentified'."
+           origin="Cycle 6 code-quality follow-up"
+           baseline="f87545d"
+           fulfillment="dd0b13e">
+      Surfaced during the cumulative final review of plan 7 (`2026-04-23-diagnostics-engine-core`). Cycle 6 landed `force_generation` and `validate_override_reason` with sufficient correctness for the public surface, but four small gaps remain — bundled here since all four sit inside `audit.py`.
+      Docstring nits (no behavior change): document that `force_generation` deliberately accepts no `user:` parameter (the override identity comes from `config.user.upn`, not caller input — a security choice future maintainers might "fix"); document that `overridden_codes` performs no dedup (intentional — caller controls the diagnostic list).
+      Behavior tweaks (need test coverage): surface the actual stripped length in `validate_override_reason`'s `ValueError` message; coerce whitespace-only `file_number` to `"unidentified"` (the current `or` short-circuit on Python falsiness lets `" "` pass through as a useless `trust_ref`). Code-chore; blast radius limited to `audit.py` + a `test_audit_log.py` extension. Pairs naturally with chore 9.
+    </chore>
+    <chore index="9"
+           id="2026-04-26-diagnostics-submodule-dunder-all-hardening"
+           status="closed"
+           type="code"
+           expendable="true"
+           synopsis="Add `__all__` declarations to v3/diagnostics submodules (audit, loader, engine, eval_context, errors) to harden public/private boundary; package __init__.py already declares one — submodules should match."
+           origin="Cycle 7 final review polish"
+           baseline="ce0fc1a"
+           fulfillment="caeeba5">
+      Surfaced during the cumulative final review of plan 7 (`2026-04-23-diagnostics-engine-core`). The package-level `__init__.py` declares an `__all__`, but the five submodules (`audit`, `loader`, `engine`, `eval_context`, `errors`) declare none — so `from ... import *` against any submodule pulls in private names alongside public ones, and static-analysis tools cannot identify private vs. public symbols at submodule granularity.
+      Fix: add an `__all__` tuple to each submodule listing its intended public exports, keeping module-private helpers excluded. No symbol additions or renames. The package `__init__.py`'s `__all__` already constrains the public surface via re-exports; this chore is a defense-in-depth pass at submodule level. Code-chore but mechanical (no test changes); `pixi run check` should remain green.
+    </chore>
+    <chore index="10"
+           id="2026-04-27-eval-context-enum-unwrap"
+           status="closed"
+           type="code"
+           expendable="false"
+           synopsis="Fix build_eval_context to unwrap str-mixin Enum to .value. rule-engine bypasses Python __eq__, so cycle-8 trust_type=='individual' fails despite str-mixin equality. Cycle 2 test pinned Python-side only; needs rule-engine roundtrip pin."
+           origin="2026-04-23-diagnostics-engine-rules cycle 8 execution"
+           baseline="caeeba5"
+           fulfillment="10a087f">
+      `build_eval_context` returns dicts containing raw Enum instances (Pydantic v2 `model_dump(mode="python")` does not unwrap them to their `.value`). For str-mixin enums like `TrustType(str, Enum)`, Python's inherited `__eq__` makes `TrustType.INDIVIDUAL == "individual"` return True — but rule-engine bypasses Python's `__eq__` and coerces via `str()`, which returns the enum repr (`"TrustType.INDIVIDUAL"`), not the value (`"individual"`). Rule expressions comparing enum-typed fields to string literals therefore silently return False.
+      The diagnostics-engine spec (§5.2, §6.9 Refactor note) and the core-plan Cycle 2 `test_enum_value_pin` both assumed str-mixin equality would carry through rule-engine evaluation. The cycle-2 test pinned only Python-level equality (passes via str-mixin's inherited `__eq__`) and never asserted a rule-engine roundtrip, so the gap stayed latent until the first rule expression comparing an enum-typed field landed (cycle 8's `estate.crossed_cliff`, on `trust.trust_id.trust_type == "individual"`).
+      Fix: add a recursive `_unwrap_enums()` helper in `eval_context.py` that replaces Enum instances with their `.value` (preserving Decimal/date/etc.); apply it to both `trust` and `firm` namespaces before return. Augment `test_enum_value_pin` with a rule-engine roundtrip assertion. Amend the spec (§5.2/§6.3/§6.9) and both plan-md files (core cycle 2; rules Task 2 Step 4 troubleshooting note) to describe the explicit unwrap mechanism instead of the incorrect str-mixin claim. Code-chore; blast radius is `eval_context.py` + 1 test augmentation + 3 doc files. Blocks resumption of plans index 8 cycle 8.
+    </chore>
+    <chore index="11"
+           id="2026-04-27-rules-plan-md-staleness"
+           status="closed"
+           type="simple"
+           expendable="false"
+           synopsis="Realign diagnostics-engine-rules plan-md with executed reality: stale BeneficiaryShare field name, string-form integer Decimal literals, and missing loader-test collision callout in Task 1 Step 5."
+           origin="Cycle 7-8 plan-execution session"
+           baseline="676b106"
+           fulfillment="c780c82">
+      Three template stalenesses in the rules plan-md required mid-flight corrections during execution of plans index 8 — same class of drift as chore 7 fixed in the core plan-md, inherited rather than learned from. Bundled here so one fix-pass lands before the plan-md is replayed or referenced.
+      The drifts: (1) a stale `BeneficiaryShare` field name in Task 1+4 templates (model has no such field); (2) string-form `Decimal` literals for integer values that lint autofixes per project policy; (3) Task 1 Step 5's gate expectation missed a collision with three cycle-3 loader tests, requiring an unplanned monkeypatch deviation in the cycle 7 commit.
+      Blast radius is the single rules plan-md file. Mirrors chore 7's pattern; should land before any future replay.
+    </chore>
+    <chore index="12"
+           id="2026-04-27-chores-xsd-add-type-attribute"
+           status="closed"
+           type="simple"
+           expendable="false"
+           synopsis="Add machine-readable `type` attribute (enum: code|simple) to the chore element in chores.xsd; backfill all existing chore entries with their classification derived from commit diff (closed) or body prose (open)."
+           origin="spec-pipeline skill design (Q3 resolver)"
+           baseline="142bd40"
+           fulfillment="dfca413">
+      Surfaced during spec-pipeline skill design: the bare-slug resolver branch `query(chore scope touches code)?` requires a machine-readable type discriminator on the chore element, currently encoded only in body prose. Pre-flight amendment so the skill ships with a deterministic resolver from day one.
+      Simple-chore — blast radius is the schema and the existing chore-attribute set in chores.xml; no `src/` or `tests/` scope.
+    </chore>
+    <chore index="13"
+           id="2026-04-27-empirical-vision-model-selection"
+           status="closed"
+           type="simple"
+           expendable="false"
+           synopsis="Validate Qwen2.5-VL:7b vs MiniCPM-V on 10-20 firm-side handwritten intake samples; score per-field accuracy, illegibility precision/recall, hallucination rate; promote winner as default-recommended model in OllamaBackend docstring."
+           origin="OCR spec §2 in-flight chore"
+           baseline="aff3c76"
+           fulfillment="e96ca6d">
+      The OCR backend (spec §4.2) names Qwen2.5-VL:7b and MiniCPM-V as indicative model candidates based on third-party benchmark recon (DocVQA scores, handwriting/non-standard-font reputation), but the spec deliberately defers commitment to a specific model pending firm-side empirical evaluation. Generic benchmarks do not predict performance on this firm's handwriting distribution, fillable-form layout, or domain vocabulary, so the spec leaves `model=` as a constructor argument and treats the recommended default as evidence-gated.
+      Method per spec §2 in-flight chore: collect 10-20 representative handwritten intake forms (consult paralegal staff on representativeness), run each through `OllamaBackend` configured for each candidate with `temperature=0`, score on per-field accuracy (matches paralegal-truth), illegibility-flag precision/recall, and hallucination rate (transcribed values for blank fields). Document findings in a separate session note; promote the winning model as the default-recommended `model=` argument in `OllamaBackend` documentation — do not hard-code (the constructor accepts model name as configuration).
+      Initial corpus seeded during plan 9b spec-to-plan: a single-writer baseline corpus lives at `assets/handwriting-samples/`, partitioned into `pages/` (four full-payload narrative fixtures across writing techniques — see `pages/BASELINE.md`) and `snippets/` (five atomic single-purpose fixtures targeting §8.1/§8.3 disciplines with stratified oracle requirements — see `snippets/SNIPPETS.md`). The snippet corpus stratifies by oracle requirement (tier 1: absence-observable, ready for unattended automation; tier 2: paralegal-truth + unambiguous strokes, character-equality assertions; tier 3: paralegal-truth + spec-interpretation judgment, qualitative scoring) and is the recommended starting point for this chore's evaluation harness. The corpus is single-writer single-payload by construction; if the chore's exit criteria require more representative variability (e.g., neither candidate clears the usability bar), expand the corpus per the §4.2 firm-side-evaluation guidance before evaluating additional candidates.
+      Exit criteria: documented model recommendation with sample-size-disclosed confidence; if neither candidate clears a usability bar (e.g., &gt;85% per-field accuracy on legible fields), the chore extends to evaluating additional candidates (Llama 3.2-Vision is deprioritized per §4.2 single-source caveat). Blast radius is documentation only (plus expansion of `assets/handwriting-samples/` if the seeded corpus proves insufficient). Gated by completion of plan 9 cycle 5 (`OllamaBackend.extract` happy path) so the backend can actually be invoked against samples.
+    </chore>
+    <chore index="14"
+           id="2026-04-27-envelope-complexity-ceiling-benchmark"
+           status="closed"
+           type="code"
+           expendable="false"
+           synopsis="Add `test_envelope_complexity_ceiling.py` (pytest.mark.integration) characterizing pass-rate vs. envelope size on candidate vision models; opportunistically test reasoning-omission to gather §7.4 evidence. Informational, not gating."
+           origin="OCR spec §2 in-flight chore"
+           baseline="aff3c76"
+           fulfillment="c22832f">
+      Grammar-constrained decoding under llama.cpp (the mechanism Ollama inherits) can produce unexpected EOF errors or schema-violation retries when the constrained Pydantic schema grows beyond a model's effective complexity ceiling. Spec §7.5 plans for chunked extraction as a fallback strategy if the production envelope exceeds the ceiling on candidate vision models, but the threshold itself — in field count, JSON-schema bytes, or both — was unknown at the production envelope scale for Qwen2.5-VL:7b and MiniCPM-V.
+      Method per spec §2 in-flight chore: added `test_envelope_complexity_ceiling.py` (pytest.mark.integration, opt-in) running `OllamaBackend.extract` against synthetic forms with controlled field counts, logging results to `tests/data/extraction_ceiling_log/`. Per-chore-body requirement: the persistence-in-code docstring blocks in `ollama_backend.py` and `trace.py` (the spec §2 "persistence in code" markers) were removed at fulfillment.
+      Findings: qwen2.5vl:3b ceiling lies between 3 and 5 flat fields — 3-field cell passes at production scale (29s), 5-field cell entered non-terminating inference state (>20min), 10-field cell terminated with truncated JSON at 334s. Production `GenerationEnvelope` (3 top-level fields + nested $defs at 4085 bytes) is within the ceiling — §7.5 chunked-extraction trigger is NOT fired today. Output sequence length / constraint-grammar depth appears to be the operative factor; schema bytes alone don't predict. Three deferred items lifted into follow-up chores: qwen2.5vl:7b ceiling sweep (production-recommended model not yet measured), §7.4 reasoning-omission cells against qwen2.5vl:7b, and broader minicpm-v/gemma3 sweeps (lower priority). Full analysis at `docs/session-notes/2026-05-11-envelope-complexity-ceiling.md`.
+      <commit sha="860ea62"
+              scope="qwen2.5vl:3b partial sweep — benchmark data + analysis"
+              role="amendment" />
+    </chore>
+    <chore index="15"
+           id="2026-04-27-trace-persistence-serialization-contract"
+           status="open"
+           type="simple"
+           expendable="false"
+           synopsis="Define canonical serialization for ExtractionTrace (recommendation: model_dump_json/model_validate_json round-trip with custom INCOMPLETE serializer/validator pair); choose persistence shape (sibling JSON vs embedded vs separate store)."
+           origin="OCR spec §2 in-flight chore"
+           baseline="aff3c76">
+      v3.0 ships `ExtractionTrace` with in-memory-identity-only semantics for the `INCOMPLETE` sentinel — `model_dump_json()` round-trips will not preserve the sentinel because no custom serializer/validator pair is wired. This is intentional per spec §6.2: persistence questions belong to the consumer-layer (CLI/GUI) session that introduces a storage transport, not to the in-memory contract that this plan establishes.
+      Method per spec §2 in-flight chore: when a consumer session lands trace persistence, define the canonical serialization shape. Recommendation (informational only; commitment lives in the consumer's session): adopt `model_dump_json()` / `model_validate_json()` as the canonical round-trip and ship a custom serializer/validator pair for `INCOMPLETE` (e.g., serialized as a tagged string and validated back to the sentinel via identity replacement). The same exercise resolves whether the trace persists alongside the trust as a sibling JSON, embedded in TrustData metadata, or in a separate store.
+      Exit criteria: a brief design note documenting the chosen persistence shape, ratified by the consumer session that introduces it. Blast radius: design note plus the consumer session's storage layer plus a small `trace.py` patch wiring the custom INCOMPLETE serializer. Gated by a consumer-layer session for trust persistence existing — no plan currently scheduled, so this chore stays open until that work surfaces. Cross-references plans index 5 (shared-firm-config / SharePoint) as a candidate co-located transport.
+    </chore>
+    <chore index="16"
+           id="2026-04-28-pytest-integration-marker-config"
+           status="closed"
+           type="simple"
+           expendable="false"
+           synopsis="Add `[tool.pytest.ini_options]` to pyproject.toml registering the `integration` marker and skipping it by default via `addopts = -m 'not integration'`; precondition for plan 9b task 9b-5 (live OCR smoke)."
+           origin="Plan 9b plan-review C4 finding"
+           baseline="330409b"
+           fulfillment="a2baaf4">
+      Plan 9b task 9b-5 introduces a live vision-model smoke test marked `pytest.mark.integration`, expected to be opt-in (skipped on `pixi run check`, run only when explicitly requested). The project currently has no pytest config: no `[tool.pytest.ini_options]` in pyproject.toml, no `pytest_addoption` in any conftest.py. Without this config, the `integration` marker is unregistered (pytest emits warnings when strict-markers is on, or treats the marker as a no-op tag) and the test runs by default on `pixi run check` — defeating the opt-in design and forcing every developer to have a live Ollama server running.
+      Fix: add a `[tool.pytest.ini_options]` section to pyproject.toml with `markers = ["integration: live network/service tests, opt-in"]` and `addopts = "-m 'not integration'"`. The opt-in invocation becomes `pixi run test -m integration` (overrides the default-skip). The conftest.py-based `pytest_addoption` flag pattern is rejected as more ceremony than the declarative pyproject.toml approach for a single skip-by-default marker.
+      Blast radius: pyproject.toml only (one section addition). Tests do not change. After this lands, plan 9b task 9b-5 is unblocked: its tests skip by default and run only via `pixi run test -m integration tests/v3/extraction/test_ollama_backend_integration.py`. Sibling chore #14 (envelope-complexity benchmark) also uses `pytest.mark.integration` and depends on this same config landing first.
+    </chore>
+    <chore index="17"
+           id="2026-04-29-ocr-gpu-acceleration-exploration"
+           status="closed"
+           type="simple"
+           expendable="true"
+           synopsis="GPU-accelerate the live OCR vision-model smoke. Resolved via IPEX-LLM Ollama drop-in: 104.08s vs 609.73s CPU baseline (5.87× speedup) on qwen2.5vl:7b after IGC version cleanup unblocked the SYCL JIT path."
+           origin="Overnight 2026-04-29 GPU investigation"
+           baseline="c51c124"
+           fulfillment="0235eda">
+      Resolved 2026-04-29: IPEX-LLM Ollama works as a drop-in for upstream Ollama (HTTP-compatible at 127.0.0.1:11434, zero `src/` changes). Wall-clock 104.08s for the qwen2.5vl:7b OCR smoke vs. 609.73s CPU baseline = 5.87× speedup. Both assertions pass including the §7.4 grammar-constrained-decoding key-order pin.
+      The original investigation had concluded the SYCL path was architecturally blocked under WSL2's MCDM SPIR-V→DXIL translator (RMS-Norm JIT failure) and recommended OpenVINO migration. **That diagnosis was wrong.** Actual root cause: stale `intel-igc-core 1.0.11378` packages in `/usr/local/lib` shadowed the proper `libigc1` from Intel's apt repo, breaking ALL OpenCL/SYCL kernel compilation. After purging the stale libs and installing the Debian-native compute-runtime stack, both OpenCL and SYCL JIT work correctly. Canonical correction lives in memory `project_wsl2_gpu_compute_dead_end.md` (revised 2026-04-29).
+      IPEX-LLM bundle stays outside `src/` per the dev-tooling scope split: paralegals run AnthropicBackend in production; OllamaBackend is dev-only. Project-side residue limited to `0235eda` (pixi.toml env var unblocking the smoke test fixture path under the new working iGPU path). Polish chore #20 wraps the daemon swap as pixi tasks.
+    </chore>
+    <chore index="18"
+           id="2026-04-29-firm-config-spec-amendment-a7"
+           status="closed"
+           type="code"
+           expendable="false"
+           synopsis="Apply A-7 to firm-config spec: append two-source loader contract from `2026-04-28-shared-firm-config-design.md` §9 into `2026-04-21-firm-config-design.md` post-finalization amendments. Pre-plan chore for indexes 5/12/13."
+           origin="Pre-plan prerequisite for shared-firm-config plans"
+           baseline="1022fa1"
+           fulfillment="d807e97">
+      The `2026-04-28-shared-firm-config-design.md` spec restructures `load_firm_config` from single-file to two-source (shared + local) discovery and merge, replacing the loader's `path=` keyword with `local_path` + `shared_path` and introducing a SharePoint-hosted shared file with a sync-unavailability cache-fallback layer. §9 of that spec specifies the verbatim text of an amendment "A-7" to append to the predecessor firm-config spec, continuing the A-1 through A-6 series.
+      §10 chore #1 of the new spec lists this amendment as a pre-planning prerequisite: it must land before plan composition references the firm-config spec as authoritative for the loader's pre-A-7 contract. Plans index 5/12/13 (foundation/cache/integration) all wait on this amendment before their `spec-to-plan` workflows can run cleanly.
+      Blast radius: a single markdown file (`docs/superpowers/specs/2026-04-21-firm-config-design.md`) with one section appended after A-6's "Confirmed" footer. No code, no tests, no schema. Verbatim §9 content carries one stale path reference (`2026-04-27-shared-firm-config-design` instead of the actual `2026-04-28-...md`) that the dispatch prompt instructs the executor to correct during paste.
+    </chore>
+    <chore index="19"
+           id="2026-04-29-resolve-fixture-path-cwd-docstring-drift"
+           status="closed"
+           type="simple"
+           expendable="true"
+           synopsis="Inline comment in `_resolve_fixture_path()` (test_ollama_backend_integration.py) claims `pixi run test` runs from the project root, but pixi.toml sets `cwd = 'tests/'` — the path-default fallback would resolve under `tests/assets/...` (nonexistent)."
+           origin="2026-04-29 OCR smoke first-run skip diagnosis"
+           baseline="0235eda"
+           fulfillment="48fed91">
+      The `_resolve_fixture_path()` helper has two branches: read `OCR_SMOKE_FIXTURE_PATH` env var, or fall back to `Path("assets/handwriting-samples/pages/print.jpg")`. The fallback's inline comment claims "current working dir is the project root for `pixi run test`" — but `pixi.toml`'s test task sets `cwd = 'tests/'`, so the fallback would resolve under `tests/assets/...` (which doesn't exist) and the test would skip with "handwriting samples not found".
+      Currently masked by `0235eda` adding `OCR_SMOKE_FIXTURE_PATH = '../assets/handwriting-samples/pages/print.jpg'` to the test task's env block — the env-path branch always fires under `pixi run test`, so the broken default never executes. The drift only manifests if a developer runs the test outside `pixi run test` (e.g., direct `pytest` invocation) without setting the env var.
+      Fix shape: either correct the comment to reflect the actual `cwd = 'tests/'` (and the env-var-as-canonical-entry-point), or relocate the default to a repo-root-anchored path resolution (e.g., `Path(__file__).resolve().parents[3] / "assets/..."`). Blast radius: single function in one test file. Simple-chore (no behavior change either way for `pixi run test`).
+    </chore>
+    <chore index="20"
+           id="2026-04-29-pixi-ollama-gpu-task-wrappers"
+           status="closed"
+           type="simple"
+           expendable="true"
+           synopsis="Add pixi tasks wrapping the IPEX-LLM Ollama daemon swap (currently manual: kill upstream + nohup IPEX). Bundle is dev-tooling living outside `src/` at `/home/ramda/ipex-llm-ollama/...`; tasks should accept its location as a configurable input."
+           origin="2026-04-29 IPEX-LLM Ollama swap polish"
+           baseline="0235eda"
+           fulfillment="c0a96bf">
+      GPU-accelerated dev OCR currently requires manually swapping daemons: `kill &lt;upstream-ollama-pid&gt;` then `nohup /home/ramda/ipex-llm-ollama/ollama-ipex-llm-2.3.0b20250725-ubuntu/start-ollama-trustgen.sh &gt; /tmp/ipex-ollama.log 2&gt;&amp;1 &amp;`, with the reverse on swap-back. The sequence is documented in `/home/ramda/ipex-llm-ollama/GO.md` but not invocable from the project surface.
+      Goal: add `pixi run ollama-gpu-start` and `pixi run ollama-gpu-stop` (or equivalent shape) that wrap the swap so `pixi run test -m integration` against the iGPU is a two-task sequence rather than ad-hoc shell. Constraint: the IPEX-LLM bundle path is dev-only (single-machine, version-specific by directory name `b20250725`), so the task must accept it as a configurable input — env var with a maintainer default, pixi `args` arg with a default, or per-machine override pattern. Hard-coding `/home/ramda/...` literally in the committed `pixi.toml` is rejected.
+      Blast radius: pixi.toml only (two task additions plus any helper env-var declaration). No `src/` or `tests/` changes; the bundle and launcher script stay in their current dev-tooling location. Simple-chore. Gates nothing — current manual swap works.
+    </chore>
+    <chore index="21"
+           id="2026-04-29-foundation-plan-md-empty-literals-final-annotation"
+           status="closed"
+           type="simple"
+           expendable="true"
+           synopsis="Amend foundation plan-md `_EMPTY_LITERALS` prescription to subscripted `Final[tuple[str, dict[str, Any], list[Any]]]`; bare `Final = (...)` triggers mypy var-annotated on heterogeneous tuple."
+           origin="Foundation plan execution mypy gate (cycle 1 Refactor)"
+           baseline="015d1c2"
+           fulfillment="312fd3b">
+      The foundation plan-md (`docs/superpowers/plans/2026-04-29-shared-firm-config-foundation.md`) prescribes the Cycle 1 Refactor stage to introduce `_EMPTY_LITERALS: Final = ("", {}, [])` as a module-level constant for the `_is_empty()` membership check. The bare `Final = (...)` annotation form was carried verbatim into the prescribed code block at line 206 of the plan-md.
+      Mypy 1.x rejects this annotation under `[var-annotated]`: PEP 591 requires bare `Final` to have a single inferable literal type, and the heterogeneous tuple `(str, dict, list)` cannot collapse to one. The Cycle 1 Refactor commit failed the `pixi run check` gate during foundation execution until a follow-up annotation correction (`Final[tuple[str, dict[str, Any], list[Any]]]`) was squashed in. The corrected annotation is now in v3.0.0's Cycle 1 Refactor commit; the plan-md still carries the original (rejected) shape for any future re-execution.
+      Blast radius: a single line in a single markdown file (`docs/superpowers/plans/2026-04-29-shared-firm-config-foundation.md`). Simple-chore. Gates nothing — the source code is correct on v3.0.0. The amendment is post-hoc plan-md sync so future readers (or re-execution dispatches) see the working prescribed shape.
+    </chore>
+    <chore index="22"
+           id="2026-04-29-pyright-legacy-exclude-path-staleness"
+           status="closed"
+           type="simple"
+           expendable="true"
+           synopsis="`[tool.pyright].exclude` in pyproject.toml lists `src/trust_generator/_legacy`; the v2 reorganization moved that directory under `v2/_legacy` and ruff already tracks the corrected path. Pyright is currently excluding a non-existent location."
+           origin="2026-04-29 CLAUDE.md hygiene audit"
+           baseline="a2baaf4"
+           fulfillment="2fefb7a">
+      Surfaced during a CLAUDE.md staleness audit. The same `_legacy` directory rename that prompted CLAUDE.md's "Architecture" rewrite (root-level `_legacy` → `v2/_legacy`) also left `[tool.pyright].exclude` pointing at the dead path. `[tool.ruff].exclude` was updated in the rename commit; the pyright entry was not, so the IDE's pyright analyzer is silently excluding nothing — excluding a non-existent path is a no-op.
+      Practical impact today is zero: the `TASK_EXCLUDE='v2'` activation envelope already keeps mypy off the legacy code, and pyright's `typeCheckingMode = "basic"` plus the broad `reportUnused*` suppressions blunt any editor noise that might surface from the un-excluded directory. The drift only manifests if a future maintainer relies on `[tool.pyright].exclude` as the canonical "do not analyze" list (e.g., wiring a CI pyright pass) and trusts a path that does not exist.
+      Blast radius: one line in `pyproject.toml`. Simple-chore (no code, no tests, no schema). Same drift class as chores #7, #11, and #19 — config staleness that survives because an adjacent correct mechanism happens to mask the symptom.
+    </chore>
+    <chore index="23"
+           id="2026-04-29-cycle-13-2-blast-radius-reconciliation"
+           status="closed"
+           type="simple"
+           expendable="true"
+           synopsis="Cycle 13-2 plan-md declared blast-radius as firm.py + test_firm.py but executor extended to tests/v3/integration/test_config_integration.py for the §5.4.8 placeholder fix. Reconcile plan-md or document the expansion in self-review."
+           origin="Task 13-4 cross-plan coordination audit (C1)"
+           baseline="f9cdfb6"
+           fulfillment="470fcc4">
+      Surfaced by the cross-plan coordination audit (task 13-4, audit prompt check A21 + the dispatcher's I.5 question). The cycle 13-2 plan-md declares `blast-radius="src/trust_generator/v3/config/firm.py; tests/v3/config/test_firm.py"`, but the cycle 13-2 Green commit (`f9cdfb6`) edited `tests/v3/integration/test_config_integration.py` to add empty `[estate_thresholds]` and `[diagnostics]` placeholder sections to its `SHARED_BODY` constant. Without the placeholders, the cycle 13-2 `_SHARED_REQUIRED_SECTIONS` membership check would have rejected that fixture and broken `pixi run check` at cycle close.
+      Why interesting: classic post-cycle-green-pass-versus-deferred-chore tradeoff. The integration plan's Q3 already absorbed `test_config_integration.py` into cycle 13-1's blast radius for the same reason (cross-caller migration), but the cycle 13-2 drafter did not anticipate that adding `_SHARED_REQUIRED_SECTIONS` would *retroactively* invalidate cycle 13-1's just-migrated fixture. The executor chose absorption (preserve gate-green) over deferral (leave main red until a follow-up chore lands) — same precedent, but a process gap because the absorption was not in the plan-md.
+      Fix shape: either amend the integration plan-md's cycle 13-2 `&lt;cycle blast-radius="..."&gt;` attribute to include `tests/v3/integration/test_config_integration.py`, OR add an "in-cycle blast-radius expansions" subsection to the plan-md self-review (line 2058+) documenting the absorption with the audit's reasoning. Blast radius: a single markdown file. Simple-chore. Gates nothing — the source code is correct on v3.0.0; this is post-hoc plan-md sync.
+    </chore>
+    <chore index="24"
+           id="2026-04-29-cycle-13-1-fixture-placeholders-plan-md-backfill"
+           status="closed"
+           type="simple"
+           expendable="true"
+           synopsis="Plan-md cycle 13-1 step 2 prescribes WELL_FORMED_SHARED ending at trust_code_citation; executor added _REQUIRED_SECTION_PLACEHOLDERS so cycle 13-1 tests survive cycle 13-2's _SHARED_REQUIRED_SECTIONS check. Backfill plan-md with the pattern."
+           origin="Task 13-4 cross-plan coordination audit (C2)"
+           baseline="0fac1c8"
+           fulfillment="36af39e">
+      Surfaced by the cross-plan coordination audit (task 13-4, audit prompt check A21). The integration plan-md cycle 13-1 step 2 prescribes a `WELL_FORMED_SHARED` constant whose body terminates at `trust_code_citation = "Illinois Trust Code (760 ILCS 3/101, et seq.)"` — no required-section placeholders. The actual cycle 13-1 Red commit (`0fac1c8`) introduced an additional `_REQUIRED_SECTION_PLACEHOLDERS` constant (empty `[estate_thresholds]\n[diagnostics]` headers) and concatenated it onto `WELL_FORMED_SHARED`, while leaving `MINIMAL_SHARED` deliberately unmodified (the latter is consumed by test 13's missing-sections assertion).
+      Why interesting: the placeholder pattern was forecast at cycle 13-1 Red time (before cycle 13-2's `_SHARED_REQUIRED_SECTIONS` constant exists) so that legacy migrated tests would not need a follow-up patch when cycle 13-2 Green wires the membership check. The executor anticipated the cross-cycle coupling that the plan-md drafter missed — same downstream-rippling-into-fixtures dynamic as chore #23, but caught upstream at Red. The asymmetry between `WELL_FORMED_SHARED` (extended) and `MINIMAL_SHARED` (unchanged) is intent-preserving but undocumented in the plan-md.
+      Fix shape: amend integration plan-md cycle 13-1 step 2 (around line 230) to introduce `_REQUIRED_SECTION_PLACEHOLDERS` and document the asymmetric application to the two shared-fixture constants, or add an "in-cycle prescriptions extended" subsection to the self-review. Blast radius: one section of one markdown file. Simple-chore. Gates nothing — the source code is correct on v3.0.0; this is post-hoc plan-md sync.
+    </chore>
+    <chore index="25"
+           id="2026-04-29-firm-config-capture-warnings-call"
+           status="closed"
+           type="code"
+           expendable="false"
+           synopsis="Spec §5.5.5.5 of shared-firm-config design prescribes `logging.captureWarnings(True)` at firm.py module-import time; current code omits the call, leaving the diagnostics-engine warning-subscriber path unwired."
+           origin="Shared-firm-config post-impl spec audit"
+           baseline="f9cdfb6"
+           fulfillment="b5f6d6d">
+      Surfaced during the post-impl audit of `2026-04-28-shared-firm-config-design.md` against the cycle-13 implementation. §5.5.5.5 prescribes a module-import-time call to `logging.captureWarnings(True)` so the diagnostics-engine warning subscriber (a future plan) can attach via `logging.getLogger('py.warnings').addHandler(...)` without coupling subscriber timing to any specific import-order between firm-config and diagnostics. The current `firm.py` omits the call, leaving the spec-prescribed bridge unwired.
+      The drift is functionally invisible today because no subscriber exists yet. It manifests when the diagnostics-engine warning-subscriber plan lands: the subscriber would either need to import firm.py defensively to opportunistically trigger a `captureWarnings` call, or fall back to a `warnings.showwarning` override — neither honors the spec's one-shot import-time bridging design, and both push subscription-timing concerns into the consumer.
+      Resolve in one of two directions: (a) add the call to firm.py at module-import time — matches spec verbatim, single-line blast radius; (b) amend §5.5.5.5 to document the showwarning-override mechanism as the actual subscription path — preserves current code, spec-only blast radius. Blocks the future diagnostics-engine warning-subscriber chore.
+    </chore>
+    <chore index="26"
+           id="2026-04-29-firm-config-path-walker-recursion"
+           status="closed"
+           type="code"
+           expendable="false"
+           synopsis="`_enumerate_path_fields` in firm.py walks one level deep with explicit deferral comment; spec §5.3.7.5 of shared-firm-config design prescribes recursive walk over BaseModel-typed sub-models."
+           origin="Shared-firm-config post-impl spec audit"
+           baseline="f9cdfb6"
+           fulfillment="663e04e">
+      Surfaced during the post-impl audit of `2026-04-28-shared-firm-config-design.md` against the cycle-13 implementation. `_enumerate_path_fields` walks one level deep with an explicit deferral comment marking the design choice; §5.3.7.5 prescribes a recursive walk over BaseModel-typed sub-models that would catch Path fields at any nesting depth.
+      The drift is functionally equivalent today because every Path field on the current schema lives on a direct sub-model of `FirmConfig`. The tripwire test `test_enumerate_path_fields_yields_known_set` passes under either traversal strategy. The drift only manifests when a future schema addition introduces a Path field two-or-more levels below `FirmConfig` — at which point the field would silently escape `validate_shared_paths_absolute` and land unvalidated.
+      Trigger: any future schema addition introducing a Path field two-or-more levels below `FirmConfig`. Until then, the deferral comment in firm.py plus the tripwire test provide adequate guard. Resolution implements recursion when the trigger fires.
+    </chore>
+    <chore index="27"
+           id="2026-04-29-firm-config-meta-docstring-section-ref"
+           status="closed"
+           type="simple"
+           expendable="true"
+           synopsis="`Meta` class docstring in firm.py references `spec §5.8`; the spec (`2026-04-28-shared-firm-config-design.md`) only has §5.6. Cosmetic drift; misleads any developer following the docstring pointer."
+           origin="Shared-firm-config post-impl spec audit"
+           baseline="f9cdfb6"
+           fulfillment="b845390">
+      <commit sha="e8fb144"
+              scope="Regen JSON Schema after Meta docstring change"
+              role="amendment" />
+      Surfaced during the post-impl audit of `2026-04-28-shared-firm-config-design.md` against the cycle-13 implementation. The `Meta` class docstring in `src/trust_generator/v3/config/firm.py` references `spec §5.8`, but the spec only has §5.6. The drift is purely cosmetic — the docstring pointer is a navigational aid, and the only surface it misleads is a developer following the reference to verify schema semantics.
+      Resolution: update the docstring reference to §5.6 (or the correct subsection if the original intent was §5.6.X specifically — verify against the spec at fix time). Blast radius: a single docstring line in `firm.py`. Classified `simple` per the chore #19 precedent (comment/docstring-only edits are treated as docs-class regardless of file location).
+    </chore>
+    <chore index="28"
+           id="2026-04-29-firm-config-data-migration"
+           status="closed"
+           type="simple"
+           expendable="false"
+           synopsis="`config/firm.toml` still carries every section; spec §8.2 of shared-firm-config design prescribes stripping non-`[user]` sections after uploading firm-wide content to the SharePoint-synced shared location."
+           origin="Shared-firm-config post-impl spec audit"
+           baseline="1022fa1"
+           fulfillment="876accc">
+      Surfaced during the post-impl audit of `2026-04-28-shared-firm-config-design.md` against the cycle-13 implementation. §8.2 prescribes a six-step migration that strips firm-wide content from the repo's `config/firm.toml` and uploads it to the SharePoint-synced shared location, retaining only the `[user]` section locally. The current repo carries the full pre-migration `firm.toml` — every section still co-located. Steps 5-7 of the spec migration (strip non-`[user]` sections, upload firm-wide content to SharePoint, commit stripped local) are unexecuted.
+      The loader works correctly today because empty-as-unset semantics make the merge lossless when local mirrors shared. The conceptual migration is incomplete: a second-workstation onboarding requires the SharePoint shared file to exist before any non-maintainer can install the tool. Until the migration completes, only the maintainer's workstation can populate the cache — a fresh paralegal onboarding has no cached fallback if SharePoint sync hasn't yet hydrated on first install.
+      Prerequisite: SharePoint library at `C:\Users\ramda\Crosby and Crosby LLP\internal-applications - trust-generator` confirmed to exist; the `firm/config/` subdirectory may need creation as part of step 1. Resolution executes spec §8.2 steps in order: (1) author shared firm.toml at sync-mounted firm/config/, (2) verify SharePoint sync + permission groups, (3) production-path verification via `load_firm_config()` on maintainer workstation per step 4a, (4) strip non-`[user]` sections from repo's `config/firm.toml` + commit, (5) confirm cache file written. Blocks the future paralegal-onboarding chore.
+    </chore>
+    <chore index="29"
+           id="2026-04-30-vision-model-eval-extension"
+           status="closed"
+           type="code"
+           expendable="false"
+           synopsis="Extended chore #13 vision-model eval to qwen2.5vl:3b (48.9% MATCH — well below 7b's 77.1%; high hallucination rate; runner stops on §8.1 fixture) and gemma3:12b (text-only Ollama tag, every fixture errors). qwen2.5vl:7b recommendation stands."
+           origin="Chore #13 vision-model eval exit-criteria"
+           baseline="aff3c76"
+           fulfillment="c343814">
+      Chore #13's exit criteria specified: "if neither candidate clears a usability bar (e.g., >85% per-field accuracy on legible fields), the chore extends to evaluating additional candidates." Two on-disk candidates absorbed the cost: `qwen2.5vl:3b` (smaller Qwen variant) and `gemma3:12b` (alternate family). Run executed under the IPEX-LLM SYCL stack (chore #30 resolution); same methodology, fixtures, and scoring rubric as chore #13 — full per-fixture detail in the 2026-05-12 addendum to `docs/session-notes/2026-04-30-vision-model-eval.md`.
+      Empirical findings: `qwen2.5vl:3b` scored 23/47 (48.9%) — well below 7b's 77.1% and the chore-#13 illustrative >85% bar. Its failure pattern is worse than 7b's not only in volume but in *kind*: 4 hallucinations (vs 7b's 1), with 3 of those concentrated on `absent-fields.jpg` (the §8.3 omit-if-absent stress fixture — the failure mode hardest for paralegals to catch). Two snippet fixtures errored mid-run with "model runner has unexpectedly stopped" 500s (not investigated; 3b not recommended regardless). `gemma3:12b` failed every fixture at the request-validation tier with "llama runner process has terminated: exit status 2" in ~3s — the bare Ollama tag is text-only and cannot process image inputs through the `OllamaBackend` request shape. Spun out as chore #33 for vision-capable Gemma investigation.
+      Methodology divergence from the open-form chore body: harness committed to the repo (`tests/v3/extraction/test_vision_model_eval.py`, pytest.mark.integration) rather than reusing `/tmp/eval_vision_models.py` — the chore-#13 ephemeral scratch was lost between sessions, and the chore-#14 ceiling benchmark's "committed harness" precedent applies. Blast radius: 1 new test file + OllamaBackend docstring update + session-note addendum. No production code path change; 7b recommendation reaffirmed. Type promoted from `simple` to `code` to reflect the committed harness.
+    </chore>
+    <chore index="30"
+           id="2026-04-30-all-caps-sycl-runner-crash"
+           status="closed"
+           type="code"
+           expendable="false"
+           synopsis="`qwen2.5vl:7b` SYCL runner crash on `all-caps.jpg` originally classified as image-content-specific. Resolution: IPEX-LLM ollama migration + userspace-stack cleanup (loader.icd self-ref + from-source gmmlib override). No src code changes."
+           origin="Chore #13 vision-model eval"
+           baseline="aff3c76"
+           fulfillment="95ac33a">
+      During the chore-#13 evaluation under upstream Ollama, `qwen2.5vl:7b` reproducibly crashed on `assets/handwriting-samples/pages/all-caps.jpg` (status 500, runner exit status 1, ~0.6s wall-clock, no tokens generated). Neighboring 1.9-2.0 MB fixtures (hurried, cursive, print) succeeded under the same daemon. The original diagnosis framed it as image-content-specific — block-print all-caps writing triggering a divergent attention codepath in the vision tower.
+      That diagnosis did not survive verification under the post-migration stack. After three hypotheses were ruled out empirically (image-content-specific, gmmlib version-skew under `/usr/local/lib` override, payload-byte-size-bound), `all-caps.jpg` at full native dimensions and bytes completed cleanly in 16.01s with semantically-correct ALL-CAPS transcription under `qwen2.5vl:3b`. Best fit for the original failure mode: an upstream-Ollama-specific vision-pipeline bug that IPEX-LLM's SYCL backend doesn't share. Best fit for the transient mid-debugging-session wedge (a 600s timeout we hit before completing the cleanup chain): stale SYCL runner state from an earlier-broken userspace stack, since cleared.
+      What actually fixed it (chronologically, between original chore opening and verification): (1) migration from upstream Ollama to IPEX-LLM Ollama; (2) removal of a self-referential `/etc/OpenCL/vendors/loader.icd` entry pointing at the OpenCL loader; (3) removal of `/usr/local/lib/libigdgmm.so*` from-source override shadowing the Debian package; (4) deployment under systemd as `ipex-llm-ollama.service` with a customized `start-ollama.sh` (debug flags, `OLLAMA_KEEP_ALIVE` disabled, `OLLAMA_NUM_PARALLEL=1`). Full operational reference lives at `docs/session-notes/2026-05-11-ipex-llm-ollama-gpu-reference.md` (§11 codifies the anti-patterns); diagnostic narrative at `docs/session-notes/2026-05-11-chore-30-resolution.md`. Blast radius: documentation only; no src/ code changes.
+      <commit sha="95ac33a"
+              scope="Reference + resolution session notes"
+              role="contribution" />
+    </chore>
+    <chore index="31"
+           id="2026-05-11-firm-data-rules-dir-scaffolding"
+           status="closed"
+           type="simple"
+           expendable="true"
+           synopsis="Scaffold SharePoint dirs at firm/data/ and firm/config/rules/ so the shared firm.toml's tilde-prefixed db_path and rules_dir resolve to real (if empty) locations. Forward-references future trustee_catalog + custom-rules consumers."
+           origin="Chore #28 §8.2 step 4 follow-up"
+           baseline="0e3c740"
+           fulfillment="040051c">
+      Chore #28's migration session updated the shared firm.toml's `trustee_catalog.db_path` and `diagnostics.rules_dir` to tilde-prefixed absolute paths under the SharePoint library (`~/Crosby and Crosby LLP/internal-applications - trust-generator/firm/{data,config/rules}`). Those destination directories do not yet exist on the SharePoint side. Today this is functionally invisible: `_load_custom_rules` at `src/.../v3/diagnostics/loader.py:159` tolerates missing `rules_dir` (returns empty list), and `trustee_catalog.db_path` has no live consumer in src/ yet (the trustee_catalog feature is future work).
+      Scope of this chore is *scaffolding*, not data movement. Create the empty `firm/config/rules/` directory on the SharePoint mount so the resolved path lands on a real (empty) directory rather than a non-existent one. Defer creation of `firm/data/` until the trustee_catalog feature has consumers — hosting a SQLite database on a OneDrive-synced library is a non-trivial design question (sync conflicts on WAL files, partial writes during sync) that should be resolved at the feature's design session, not pre-emptively in scaffolding.
+      Blast radius: SharePoint-side filesystem only (no in-repo file changes). Fulfillment is documenting the dir creation in a follow-up to the 2026-05-11 firm.toml migration session note. Gates nothing — both consumer code paths already tolerate missing directories.
+    </chore>
+    <chore index="32"
+           id="2026-05-11-qwen2-5vl-7b-ceiling-and-reasoning-cells"
+           status="closed"
+           type="code"
+           expendable="false"
+           synopsis="Ran ceiling-sweep + §7.4 reasoning-omission cells against `qwen2.5vl:7b`. 7b clears fc=3,5,10 reasoning-enabled; reasoning-omission wedges the model at fc=3 (600s ReadTimeout) — stronger §7.4 claim than spec asserts."
+           origin="Chore #14 deferred item"
+           baseline="860ea62"
+           fulfillment="b55114b">
+      Chore #14 ran the envelope-complexity-ceiling benchmark against `qwen2.5vl:3b` only — qwen2.5vl:7b was skipped because the GPU stack was in a degraded state (later resolved as chore #30). 3b results pinned the ceiling between 3 and 5 flat fields, but that ceiling is per-model: it depends on output-sequence length under constraint-grammar decoding, which the 7b variant handles with a different attention budget. 7b is the production-recommended model per chore #13's 77.1% per-field accuracy lead, so its ceiling was the load-bearing measurement.
+      Empirical findings (full detail in `docs/session-notes/2026-05-11-envelope-complexity-ceiling.md` addendum): 7b cleared all reasoning-enabled cells through fc=10 with elapsed *decreasing* as field count grows (51.1s → 20.1s → 9.3s) — the reasoning channel self-balances, scaling inversely with available data slots. Reasoning-omission produced two distinct failure modes: fc=3 wedged the model entirely (ReadTimeout at 600s — non-terminating generation), fc=5 produced fast invalid output (ValidationError in 23.7s), fc=10 unexpectedly passed. The fc=3 wedge is the strongest §7.4 evidence the project has gathered: removing the reasoning channel at small envelope sizes risks *liveness failure*, not just quality regression.
+      §7.5 chunked-extraction trigger remains not-fired at production scope. Spec-amendment candidate flagged: §7.4 wording should include the liveness claim (currently positioned as quality/grounding only). Blast radius: session-note append (commit `b55114b`); no src/ changes. Harness env-var overrides (`OCR_CEILING_MODELS`, `OCR_CEILING_FIELD_COUNTS`, `OCR_CEILING_REQUEST_TIMEOUT_S`) were already in `c22832f` from the chore-#14 close-out, so no harness commit was needed. Deferred sweeps (minicpm-v, gemma3:12b at higher fc; fc∈{15,20,30,50}) intentionally left for later — chore #29 covers the alternate-model question on its own terms.
+    </chore>
+    <chore index="33"
+           id="2026-05-13-gemma3-vision-capability-investigation"
+           status="closed"
+           type="simple"
+           expendable="true"
+           synopsis="Gemma3 vision rejection root-caused: SYCL0 worst-case-graph OOM in `multimodalStore.getTensor` under IPEX-LLM Ollama 0.9 fork, not a text-only build. Two alt architectures (moondream, llava-llama3) eval'd and rejected. qwen2.5vl:7b stands."
+           origin="Chore #29 deferred — gemma3:12b request-validation failures"
+           baseline="c343814"
+           fulfillment="433f775">
+      Initial hypothesis (that the `gemma3:12b` Ollama tag was text-only) was wrong. Re-pulling both `gemma3:4b` and `gemma3:12b` confirmed `capabilities: ['completion', 'vision']` with mmproj projector tensors. The runner still terminates with `exit status 2` at ~2-4s per request. Server-side journal capture revealed the actual failure: a panic in `multimodalStore.getTensor` at `multimodal.go:98`, called from `reserveWorstCaseGraph` — the 1.39GB projector tensor (slot #35) plus 34 per-layer weight allocations exceed the IPEX-LLM SYCL0 budget on the Iris Xe iGPU. Same constraint family as chore #30 (SYCL0 buffer allocation), different boundary. Compounded by IPEX-LLM Ollama being pinned to upstream Ollama 0.9, which predates most multimodal allocator improvements; Gemma3 vision support is mostly post-0.9.
+      Pivoted per chore exit criteria to evaluate alternative architecture classes. `moondream:1B` (Phi-2 base) runs cleanly but scored 0.8% MATCH with 82 hallucinations on the §8.3 absent-fields fixture alone — most paralegal-hostile failure mode observed. `llava-llama3:8b` (LLaVA CLIP-ViT-L + Llama3 backbone, size-matched to qwen2.5vl:7b) scored 5.9% MATCH with honest-OMIT failure pattern (refuses on hard fixtures rather than hallucinating) but still unusable accuracy. Five architecture families now tested across chores #13 + #29 + #33: Qwen2.5-VL, Qwen2-based (minicpm-v), LLaVA-Llama3, Phi-2-based (moondream), Gemma3 (SigLIP+Gemma3). Two are production-grade-or-baseline; three are not viable; Gemma3 is infrastructure-gated (would need re-test if IPEX-LLM rebases on newer upstream).
+      Closing disposition: qwen2.5vl:7b recommendation reaffirmed across three evaluation rounds. Production code path unchanged. Session-note addendum at `docs/session-notes/2026-04-30-vision-model-eval.md` captures the runner-panic trace inline + per-fixture detail for all three candidates. Re-opening this chore should be triggered only by an IPEX-LLM Ollama version bump past 0.10, or by access to a system with discrete GPU (Iris Xe SYCL0 budget is the structural ceiling here).
+      <commit sha="06ecde0"
+              scope="granite + llava + grammar-constrained-decoding finding"
+              role="amendment" />
+      Post-close amendment (2026-05-13 PM): two additional candidates evaluated under a 10-min total-eval disqualifier rule. `granite3.2-vision:2b` produced the strongest quality finding of the entire sweep — 55.9% MATCH with zero HALLUCINATIONs (paralegal-triage safer than qwen2.5vl:3b's 48.9% MATCH with 4 hallucinations) — but disqualified on wall-clock (17:56 + 600s timeout on `pages/hurried.jpg`). `llava:7b` ran 17min before kill; smoke test confirmed normal chat-mode behavior (~6-34s, correct content). Both candidates expose the same structural finding: Ollama 0.9's grammar-constrained sampler, combined with spec §7.3's `format=GenerationEnvelope.model_json_schema()` pin, penalizes models without document-structured pretraining — token re-sampling on grammar-disallowed tokens explodes wall-clock. Qwen2.5-VL aligns naturally with the grammar; LLaVA / Granite / Gemma3 do not. Reaffirms the qwen2.5vl:7b recommendation across four evaluation rounds and six architecture families. Re-opening gated on IPEX-LLM Ollama version bump past 0.10 (where upstream improved both multimodal allocation and grammar-constrained sampling); relaxing `format=...` is not on the table (breaks spec §7.3 schema-pin guarantee).
+      <commit sha="8947f18"
+              scope="moondream re-investigation — captioning vs extraction"
+              role="amendment" />
+      Follow-up amendment (2026-05-13 PM, after granite/llava): re-pulled `moondream:1B` and applied the smoke-test diagnostic lens. Probe-1 ("describe this image") returned 54 tokens correctly identifying the grantor name; probe-2 ("yes/no") and probe-3 (`/api/generate`) returned `eval_count=1` — moondream emits EOS immediately for non-captioning prompts. Moondream is a captioning model, not an extraction model. This reframes the original 0.8% MATCH / 82-hallucination result: NOT a model-capability failure; the runner forced moondream past its EOS prior under grammar pressure, and re-sampling produced a flat distribution over schema-allowed tokens that flowed random names from pretraining into structurally-valid JSON slots. Adds a second grammar-constrained-decoding failure mode to the diagnostic taxonomy alongside the re-sample slowdown observed on LLaVA/Granite. Both reduce to the same root cause (token distribution mis-aligned with the grammar lattice); qwen2.5vl:7b's document-structured pretraining avoids both. Recommendation unchanged.
+      <commit sha="e5bab80"
+              scope="timing variance + granite refusal-collision discovery"
+              role="amendment" />
+      Final follow-up (2026-05-13 PM): two open questions answered. (1) Per-fixture timing variance is a fingerprint of grammar-mismatch failure mode — granite 1.6× (tight, schema-lattice traversal dominates), llava-llama3 3.6× (moderate, OMIT-vs-extract mix), moondream 13.9× (wild, EOS-flood depth). (2) Granite re-probe on `pages/hurried.jpg` in chat-mode terminated in 31.6s with content "unanswerable" (eval_count=5). The harness 600s timeout was misattributed — it was granite trying to refuse under a JSON-schema grammar that has no refusal path. Discovered third grammar-constrained-decoding failure mode: **refusal-vs-schema collision** (qwen2.5vl:3b's runner-stops on illegibility-stress.jpg is plausibly the same mechanism). Reclassified granite's MISMATCH verdicts: content-correct rate is 69.7% (vs 55.9% strict-MATCH) — within 7-8pp of qwen2.5vl:7b. Granite wall-clock decomposes cleanly: ~8min successful + 10min refusal-collision; without collision overhead the eval fits within the 10-min budget. **Granite is salvageable conditional on harness changes** (detect grammar-stuck state, schema-relaxation for refusal, or per-fixture short-timeout-with-retry) — not in scope for chore #33. qwen2.5vl:7b recommendation unchanged for current code path.
+      <commit sha="583b247"
+              scope="granite retest under corrected invocation pattern"
+              role="amendment" />
+      Honest retest (2026-05-13 PM): user correctly identified the prior DQ as lazy — wall-clock was measured under a known-incompatible invocation pattern without testing whether transitioning to a corrected pattern resolves it. Ran the retest using only the `prompt_builder=` public seam (no schema or backend changes) + 120s per-request ceiling. Refusal-targeted prompt resolved hurried.jpg from 600s timeout → 59.1s clean envelope with `{"reasoning":"...mark each field as illegible...","grantors":[{},{}], "beneficiaries":[{},{}]}`. Full eval: **9:35 total — UNDER the 10-min budget**. But accuracy regressed (44.1% strict MATCH vs 55.9% production-prompt) with **1 new HALLUCINATION** on absent-fields.jpg and over-refusal on legible fixtures (all-caps -5 MATCH, label-on-line -1). Three honest revisions: (a) "DQ on wall-clock" was lazy, granite is NOT structurally disqualified; (b) neither granite configuration is strictly better than qwen2.5vl:7b — both dominated on the accuracy/wall-clock Pareto frontier (7b: 77.1% at ~6min); (c) granite's distinguishing feature is the safety profile (0 invented content) preserved ONLY under the production prompt — the refusal-prompt sacrifices it. Granite remains a documented backup candidate, not a replacement. Re-opening criteria sharpened: Ollama 0.10+ rebase OR prompt-engineering investment preserving §8.3 guardrails while enabling refusal — neither in scope. Production code path unchanged.
+    </chore>
+  </chores>
+</reference>

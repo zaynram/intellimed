@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-model href="../../../.claude/context/schema/sequence.xsd"?>
+<!--
+  Execution DAG for plan-group 2026-05-14-anthropic-extraction-backend.
+  Authored by sequence-multi-plan workflow on 2026-05-18.
+
+  Wave shape (from sequence_helpers.py wave-decompose against splits.xml):
+    Wave 1: [core]            — no deps
+    Wave 2: [instrumentation] — depends-on: core
+  Both waves are single-plan; mode="sequential" documents "no concurrency
+  intended" rather than "concurrency forbidden" (with N=1 child per wave
+  the modes are operationally equivalent).
+
+  Symbol edges manually curated from instrumentation's Predecessor
+  verification (P3/P4 imports + AssertionError checks) and Out-of-scope
+  table; the extract-edges helper returned [] because the plan-mds carry
+  cross-plan ownership in prose tables rather than the bullet shape
+  `- <sibling>: <symbol> — <reason>` the helper regex parses.
+
+  Invariants encode three cross-plan concerns:
+    - seam-preservation: cycle 1a's prompt-module back-compat seam must
+      survive every instrumentation edit (ollama_backend.py is outside
+      both children's blast-radii and cannot be touched).
+    - test-model-coupling: _TEST_MODEL (test_anthropic_backend.py) must
+      equal _DEFAULT_MODEL (test_anthropic_backend_integration.py).
+    - no-new-toplevel-fns: instrumentation only extends existing seams
+      (_load_pdf_or_image, _build_user_message, _invoke_envelope_call);
+      new top-level functions would indicate scope drift.
+  And two execution-order concerns:
+    - predecessor-gate: instrumentation P1-P6 must pass before any
+      instrumentation cycle's Red commits.
+    - api-credit-cap: task 13a + cycle 15 require explicit user `y`
+      confirmation at their Step 0 gate before the source code hits the
+      live Anthropic API. Scope is source-code-API only (the Claude Max
+      20x subscription covers all Claude Code subagent runtime; the
+      ~$5 API credit is a separate raw-API account touched only by
+      `anthropic.Anthropic().messages.create(...)` calls from src/ and
+      ad-hoc verification scripts).
+-->
+<sequence
+    group-id="2026-05-14-anthropic-extraction-backend"
+    splits="docs/superpowers/specs/2026-05-14-anthropic-extraction-backend-splits.xml"
+    generated-at="2026-05-18T18:27:31-05:00">
+  <waves>
+    <wave index="1" mode="sequential">
+      <plan suffix="core" />
+    </wave>
+    <wave index="2" mode="sequential">
+      <plan suffix="instrumentation" />
+    </wave>
+  </waves>
+  <dependencies>
+    <edge from="instrumentation"
+          to="core"
+          symbol="_invoke_envelope_call"
+          reason="cycles 11/12 inject cache_control + thinking kwargs into core's seam (created by core cycles 5/6); seam signature must exist before instrumentation Red." />
+    <edge from="instrumentation"
+          to="core"
+          symbol="_load_pdf_or_image"
+          reason="cycle 8 extends with size+page prechecks; cycle 9 expands MIME allow-list (PDF-only at core); seam created by core cycle 7." />
+    <edge from="instrumentation"
+          to="core"
+          symbol="_build_user_message"
+          reason="cycle 9 adds image branch to core's PDF-only message builder; core cycle 7 establishes the PDF-only baseline branch." />
+    <edge from="instrumentation"
+          to="core"
+          symbol="AnthropicBackend"
+          reason="every instrumentation test instantiates AnthropicBackend(model=_TEST_MODEL, ...); ctor created by core cycle 4." />
+    <edge from="instrumentation"
+          to="core"
+          symbol="AnthropicGenerationEnvelope"
+          reason="envelope shape consumed by cycle 15 integration smoke and by cycle 11/12 captured-kwargs assertions; created by core cycle 2." />
+    <edge from="instrumentation"
+          to="core"
+          symbol="build_intake_prompt"
+          reason="prompt_anthropic.build_intake_prompt used by cycle 15 live-API fixture path; created by core cycle 1b." />
+  </dependencies>
+  <invariants>
+    <invariant id="seam-preservation">
+      <constraint>prompt.build_intake_prompt re-export (cycle 1a safety-net) survives all instrumentation edits; ollama_backend.py:13 import path stays green throughout wave 2.</constraint>
+      <enforcement>
+        <gate kind="peer-symbol-check">pixi run python -c "from trust_generator.v3.extraction.prompt import build_intake_prompt; assert callable(build_intake_prompt); from trust_generator.v3.extraction.ollama_backend import OllamaBackend; print('ok')"</gate>
+        <gate kind="project-test">pixi run test -- v3/extraction/test_anthropic_backend.py::test_prompt_module_reexports_build_intake_prompt_for_ollama_backend_compat</gate>
+      </enforcement>
+    </invariant>
+    <invariant id="test-model-coupling">
+      <constraint>_TEST_MODEL in test_anthropic_backend.py must equal _DEFAULT_MODEL in test_anthropic_backend_integration.py; the two test-file model constants must agree or instrumentation tests drift silently. No ctor model default exists (spec §6).</constraint>
+      <enforcement>
+        <gate kind="peer-symbol-check">pixi run python -c "from tests.v3.extraction.test_anthropic_backend import _TEST_MODEL; from tests.v3.extraction.test_anthropic_backend_integration import _DEFAULT_MODEL; assert _TEST_MODEL == _DEFAULT_MODEL, f'drift: _TEST_MODEL={_TEST_MODEL!r}, _DEFAULT_MODEL={_DEFAULT_MODEL!r}'; print('ok')"</gate>
+      </enforcement>
+    </invariant>
+    <invariant id="no-new-toplevel-fns">
+      <constraint>instrumentation cycles 8/9/11/12/13b only extend existing AnthropicBackend methods (_load_pdf_or_image, _build_user_message, _invoke_envelope_call, __init__); no new top-level function in anthropic_backend.py absent from core.</constraint>
+      <enforcement>
+        <gate kind="peer-symbol-check">pixi run python -c "import ast, pathlib; tree = ast.parse(pathlib.Path('src/trust_generator/v3/extraction/anthropic_backend.py').read_text()); names = {n.name for n in tree.body if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))}; expected = {'_anthropic_envelope_to_extraction_result','_map_grantor_anthropic_envelope','_map_beneficiary_anthropic_envelope','_wrap_anthropic_error'}; extras = names - expected; assert not extras, f'unexpected new top-level fns: {sorted(extras)}'; print('ok')"</gate>
+      </enforcement>
+    </invariant>
+    <invariant id="predecessor-gate">
+      <constraint>instrumentation P1-P6 MUST pass before instrumentation cycle-8 Red lands (enforced via spec-pipeline invariant #5: lead commits per-child plans.xml status flip on core close, before wave 2 starts).</constraint>
+      <enforcement>
+        <gate kind="invariant-check">test "$(xmllint --xpath 'count(//plan[@id=\"2026-05-14-anthropic-extraction-backend-core\" and @status=\"closed\"])' .claude/context/plans.xml)" = "1"</gate>
+        <gate kind="peer-symbol-check">pixi run python -c "from trust_generator.v3.extraction.anthropic_backend import AnthropicBackend, AnthropicGenerationEnvelope; import inspect; m = dict(inspect.getmembers(AnthropicBackend)); assert '_load_pdf_or_image' in m and '_invoke_envelope_call' in m; print('ok')"</gate>
+        <gate kind="project-check">pixi run check</gate>
+      </enforcement>
+    </invariant>
+    <invariant id="api-credit-cap">
+      <constraint>instrumentation plan-md MUST document a Step 0 user-confirmation gate for task 13a + cycle 15 (live anthropic.messages.create calls; ~$5 raw-API cap). Runtime enforcement lives in plan-md procedures; this gate guards documentation presence only.</constraint>
+      <enforcement>
+        <gate kind="invariant-check">grep -q 'Step 0' docs/superpowers/plans/2026-05-14-anthropic-extraction-backend-instrumentation.md &amp;&amp; grep -q 'credit-cap' docs/superpowers/plans/2026-05-14-anthropic-extraction-backend-instrumentation.md</gate>
+      </enforcement>
+    </invariant>
+  </invariants>
+  <execution-policy
+      wave-gate="per-wave"
+      integration-checkpoint="per-wave"
+      code-review-checkpoint="disabled"
+      finishing-skill="false"
+      code-review-critical-action="halt" />
+</sequence>

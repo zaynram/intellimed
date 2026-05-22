@@ -1,139 +1,56 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Guidance for Claude Code when working in this repository.
 
-## Project Context
+## Project
 
-**Trust Generator** is a Python tool for Crosby and Crosby LLP that automates generation of Family Trust documents. It accepts client intake data from multiple formats (.docx questionnaire, .json, .pdf fillable form, or GUI entry), validates it, and produces fully populated trust documents with attorney-review sections highlighted.
+**Trust Generator** is a Python tool that automates generation of Family Trust documents for a small estate-planning firm. It accepts client intake data from multiple input formats (.docx, .json, fillable .pdf, GUI), validates it, and produces fully populated trust documents with attorney-review sections highlighted.
 
-The trust document structure is derived from a **75-page WealthCounsel trust template**, condensed to ~18 pages covering 12 articles + 4 schedules. The 12-article structure and the set of information collected must be preserved — attorneys are trained to review documents in this format.
+Target users: paralegals (run it day-to-day) and attorneys (review output). Clients never interact with the tool.
 
-Target users: **paralegals** who run it day-to-day, **attorneys** who review output. Clients (often elderly) never interact with the software directly.
+## Environment
 
-### Origin
+Pixi-managed. After cloning: `pixi install`. The pixi env pins Python 3.12 (rule-engine compat); the maintainer's system Python is 3.14, so any ad-hoc Python invocation must go through `pixi run python` to land in the right interpreter.
 
-The original codebase was a proof-of-concept built by the lead developer using AI-assisted coding, described as "rudimentary." It was rewritten from scratch (v2.0) to fix critical bugs and transform it into a production-quality paralegal workflow tool. The legacy code is preserved in `src/trust_generator/_legacy/` for reference but is excluded from linting and type checking.
+Common commands (`pixi run <name>`):
 
-## Commands
+- `trust-generator` — GUI entry point
+- `trust-generator-cli <subcommand>` — CLI (subcommands: generate, validate, parse, create-printable, create-fillable-pdf)
+- `test [match]` — pytest under the pixi env (cwd `tests/`). Positional `match` defaults to `test_`. Tests marked `@pytest.mark.integration` are skipped by default; run them with `pixi run test -- -m integration`.
+- `lint`, `format` — ruff
+- `fix`, `fix-unsafe` — ruff autofix (do not invoke during code review; mutates the working tree)
+- `mypy [target]` — type check. Positional `target`, e.g. `pixi run mypy v3/diagnostics`.
+- `check` — combined gate (lint + mypy + test)
+- `build`, `dist`, `bundle` — conda package, Windows .exe, distribution zip
+- `ollama-gpu-start` / `ollama-gpu-stop` — swap port 11434 between upstream and IPEX-LLM Ollama (dev-only; see auto-memory)
 
-All commands run inside the Pixi environment. If the environment is not yet installed: `pixi install`.
+Pixi tasks accept positional arguments only, applied in declaration order; named-argument syntax (`name=value`) is **not** supported. To forward additional flags to the underlying tool, use `pixi run <task> -- <extra-args>` (everything after `--` is appended verbatim).
 
-```bash
-# Run the app (auto-selects GUI if no args, CLI if args given)
-pixi run trust-generator
-
-# CLI subcommands
-pixi run trust-generator-cli generate -i questionnaire.docx [-o output.docx] [--force]
-pixi run trust-generator-cli validate -i questionnaire.docx
-pixi run trust-generator-cli parse -i questionnaire.docx [--format json|summary] [-o data.json]
-pixi run trust-generator-cli create-printable [-o questionnaire_clean.docx] [--individual]
-pixi run trust-generator-cli create-fillable-pdf [-o output.pdf] [--individual]
-
-# Development
-pixi run test          # Run pytest (166 tests)
-pixi run lint          # Run ruff check
-pixi run format        # Run ruff format
-pixi run typecheck     # Run pyright
-
-# Build / distribute
-pixi run build         # Build conda package
-pixi run dist          # Build standalone Windows .exe (depends on build)
-pixi run bundle        # Bundle .exe + assets into trust-generator.zip (depends on dist)
-```
+Project lint policy: ruff in preview mode targeting py312. RUF022 auto-alphabetizes `__all__` tuples — don't prescribe a non-alphabetic ordering, it won't survive `pixi run fix`. RUF032 autofixes integer-valued `Decimal("n")` to `Decimal(n)` — write integer-form Decimal literals directly to avoid lint thrash.
 
 ## Architecture
 
-Schema-centric pipeline (hexagonal architecture). Every component connects through the `TrustData` Pydantic model:
+Schema-centric pipeline (hexagonal): every component connects through the `TrustData` Pydantic model. Parsers produce `TrustData` from input files; validators classify fields and run cross-field rules; the generator emits .docx output.
 
-```sh
-Input (.docx | .json | .pdf | GUI manual entry)
-  |
-  v
-Parser (parsers/)  -->  TrustData (schema.py)  +  ValidationReport
-                              |
-                              +-->  Validator (validators/)
-                              |         checks completeness, cross-field rules
-                              |
-                              +-->  GUI Review (ui/gui.py)
-                              |         displays data + validation inline
-                              |
-                              +-->  Generator (generators/)
-                                        TrustData + AppConfig -> .docx output
-```
+Production source is `src/trust_generator/v3/`. The canonical schema is `src/trust_generator/v3/schema.py` (`TrustData` and nested models); firm-side configuration is `src/trust_generator/v3/config/firm.py` (`FirmConfig`). All new work targets v3.
 
-Parsers support 3 input formats: `.docx` questionnaire, `.json`, and filled `.pdf` questionnaire.
+`src/trust_generator/v2/` is referential only — excluded from lint/mypy/pytest via `TASK_EXCLUDE='v2'` in the `pixi.toml` activation env. Despite producing the current build artifact, v2 has no active user base and is being fully superseded by v3. Do not edit v2, treat its API as a maintenance target, or propose v2↔v3 signature migrations; it is a same-named ancestor, not a contract to preserve.
 
-### Module Structure
+## Where context lives
 
-```sh
-src/trust_generator/
-├── schema.py                  # TrustData Pydantic model — the canonical data type
-├── config.py                  # TOML config loader (firm info, jurisdiction defaults)
-├── logging_setup.py           # Logging configuration (file + console)
-├── parsers/
-│   ├── registry.py            # parse_file() — auto-detects format by extension
-│   ├── docx_parser.py         # Parses .docx questionnaire → TrustData
-│   ├── json_parser.py         # Parses .json → TrustData (via Pydantic validation)
-│   └── pdf_parser.py          # Parses completed fillable PDFs → TrustData
-├── validators/
-│   ├── report.py              # ValidationReport, Finding, FieldEntry models
-│   └── validate.py            # validate(TrustData) → ValidationReport
-├── generators/
-│   ├── docx_formatter.py      # Reusable DocxFormatter class (h1, body, manual_review, etc.)
-│   ├── trust_document.py      # generate_trust_document() — 12 articles + 4 schedules
-│   ├── printable_questionnaire.py  # generate_printable_questionnaire() — clean blank form
-│   └── pdf_questionnaire.py   # Fillable PDF generation (requires reportlab)
-├── ui/
-│   ├── app.py                 # main() entry point — auto-detects GUI vs CLI
-│   ├── gui.py                 # Tkinter 4-step workflow: Import → Review → Generate → Results
-│   ├── cli.py                 # Argparse subcommands: generate, validate, parse, create-printable
-│   ├── dev.py                 # trust-generator-cli entry point (forces CLI mode)
-│   ├── forms.py               # Reusable form widgets (TextField, DropdownField, CheckboxField, ListEditor, ToolTip)
-│   └── drafts.py              # Managed draft save/load/purge (%APPDATA%/trust-generator/drafts/)
-├── _legacy/                   # Original code (excluded from lint/typecheck, kept for reference)
-├── app.py                     # Thin wrapper → ui.app.main (for pyproject.toml entry point)
-└── dev.py                     # Thin wrapper → ui.app.main("cli") (for pyproject.toml entry point)
-config/
-└── firm.toml                  # Editable firm identity + jurisdiction defaults
-```
+- `docs/superpowers/specs/` — design specs (one per major surface change; preceded by a brainstorm doc when present)
+- `docs/superpowers/plans/` — TDD-structured implementation plans (one per spec; cycles map to commits)
+- `.claude/context/plans.xml` — index of plans with status (open/closed) and cross-references
+- `.claude/context/chores.xml` — outstanding small actionable items, classified as code-chore vs. simple-chore
+- `.claude/context/schema/` — XSDs validating the two XML files above
+- `.claude/rules/development-strategy.md` — DDD + TDD methodology rules; auto-loaded as project instructions
+- Plan/spec/chore execution workflows are owned by the `spec-pipeline` plugin (skill `spec-pipeline:spec-pipeline`; agents `spec-pipeline:plan-executor`, `spec-pipeline:chore-executor`). Invoke through that plugin rather than authoring ad-hoc prompts.
 
-### Key Design Decisions
+## Conventions
 
-- **Pydantic schema as the single source of truth**: All parsers produce `TrustData`, all generators consume it. Type safety eliminates the entire class of string-key typo bugs and dict-access crashes from the original.
-- **Elections are typed enums with `bool` fields**: The original `if self.g("spendthrift", str(True))` bug (always truthy) is impossible — `spendthrift` is a proper `bool` that defaults to `True` but respects `False`.
-- **Config file for firm identity**: Firm name, address, phone, and jurisdiction defaults are in `config/firm.toml`, not hardcoded in Python. For deployed `.exe`, config is copied to `%APPDATA%/trust-generator/` on first run.
-- **Validation before generation**: The validator classifies every field as provided/defaulted/missing and checks cross-field rules (share percentages sum to 100, etc.). Generation is blocked on errors.
-- **Clean printable questionnaire**: Solves the placeholder-text complaint. `create-printable` generates a blank .docx with empty answer cells, checkbox symbols, and firm branding — no hint text to remove.
-- **Configurable party labels**: `party_a_label`/`party_b_label` control all display text. Internal field names use `party_a`/`party_b` with JSON backward compat via Pydantic `validation_alias`.
-- **Managed draft system**: Drafts saved in `%APPDATA%/trust-generator/drafts/` with SSN exclusion and 90-day auto-purge.
-- **Pre-generation check**: Critical fields (trust_name, trust_date, state, county, grantor/party names, trustee_names, ssn_owner_name) must be non-empty before document generation.
-
-## Key Data Structures
-
-The `TrustData` model in `schema.py` contains nested Pydantic models:
-
-| Model                                           | Fields                                                                                  | Purpose                                     |
-| ----------------------------------------------- | --------------------------------------------------------------------------------------- | ------------------------------------------- |
-| `PersonInfo`                                    | full_legal_name, dob, ssn, address, phone, email, employer, maiden_name                 | Grantor (party_a or party_b)                |
-| `TrustIdentity`                                 | desired_trust_name, date, state, county, whose_ssn                                      | Trust ID and jurisdiction                   |
-| `Elections`                                     | 19 fields (enums + bools)                                                               | All checkbox-driven trust configuration     |
-| `TextBlocks`                                    | statement_of_intent, personal_message, custom terms, notes                              | Freeform attorney-review sections           |
-| `Child`, `SuccessorTrustee`, `BeneficiaryShare` | Varies                                                                                  | List items                                  |
-| 6 asset models                                  | `RealProperty`, `FinancialAccount`, `Vehicle`, `InsurancePolicy`, `Pension`, `Valuable` | Asset categories                            |
-| `party_a_label`, `party_b_label`                | `str`                                                                                   | Display labels for joint trust parties (default: Husband/Wife) |
-| `SsnOwner`                                      | enum                                                                                    | Whose SSN to use for trust tax ID (PARTY_A, PARTY_B, GRANTOR)  |
-
-Computed properties on `TrustData`: `trust_name`, `trust_date`, `trustee_names`, `ssn_owner_name`, `party_a_name`, `party_b_name`, `state`, `county`, `asset_summary()`.
-
-## v2.2 Changes (implemented in v2.1-v2.2)
-
-- **Fillable PDF questionnaire**: Generate a fillable PDF with form fields mapped to schema paths; parse completed PDFs back (requires reportlab + pypdf). Done.
-- **Full data entry GUI mode**: Paralegals can enter and edit data field-by-field in the GUI with reusable form widgets and list editors. Done.
-- **Gender-inclusive party labels**: Schema uses `party_a`/`party_b` internally with configurable display labels, replacing hardcoded husband/wife. Done.
-- **Managed draft system**: Auto-save/load/purge drafts with SSN exclusion. Done.
-
-## v2.3 Roadmap
-
-- **Firm config GUI settings screen**: Edit `firm.toml` values from within the GUI
-- **SSN field masking/encryption**: Mask SSN display in the GUI and encrypt at rest in drafts
-- **Complete PDF questionnaire**: Add list fields (children, assets) and elections to fillable PDF
+- Tests live in `tests/`, mirroring the `src/trust_generator/` module tree. Fixtures in nearest `conftest.py`.
+- TDD discipline per cycle: Red commit → Green commit → optional Refactor commit. Cycle scope is defined in the plan-md.
+- Commits land on feature branches, never `main`. Always create a new commit (no `--amend`). Never bypass hooks (`--no-verify`).
+- For items raised mid-implementation that aren't covered by the active plan: classify as plan-entry (blocking, scope-significant) or chore-entry (small, isolatable), then add to `plans.xml` or `chores.xml` per the `spec-pipeline` scope-maintenance protocol. Do not silently expand the active plan.
+- When project configuration (lint rules, type-checker settings, pixi task definitions, env activation, etc.) creates friction with a desired implementation, raise it as a proposed config change for user review. Do not work around it in code, suppress diagnostics locally, or accept the friction as fixed terrain.
+- In any plan-group whose blast-radius includes `pyproject.toml`, the blast-radius implicitly extends to `pixi.toml` and `pixi.lock` for the duration of dep-add cycles (atomic-edit semantics of `pixi add --pypi`). Plans should NOT enumerate `pixi.toml`/`pixi.lock` separately in splits.xml; treat them as transactional mirrors of the pyproject pin.

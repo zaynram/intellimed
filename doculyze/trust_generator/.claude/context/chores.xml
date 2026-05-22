@@ -1,10 +1,373 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <?xml-model href="schema/chores.xsd"?>
-<reference
-    name="chores"
-    path=".claude/context/chores.xml"
-    context="Canonical reference for outstanding chores for the project. Chores are small actionable items that need to be addressed, but do not take priority over active development work."
-    created-at=""
-    modified-at=""
->
-    <chores></chores>
+<!-- NOTE: update the modified-at attribute after editing this file -->
+<!-- NOTE: all closed chores were archived to .claude/context/.archive/chores.xml on 2026-05-15 -->
+<reference name="chores"
+           path=".claude/context/chores.xml"
+           context="Canonical reference for outstanding chores for the project. Chores are small actionable items that need to be addressed, but do not take priority over active development work."
+           created-at="2026-04-16T23:15:36-05:00"
+           modified-at="2026-05-21T02:59:32-05:00">
+  <chores>
+    <chore index="15"
+           id="2026-04-27-trace-persistence-serialization-contract"
+           status="open"
+           type="simple"
+           expendable="false"
+           synopsis="Define canonical serialization for ExtractionTrace (recommendation: model_dump_json/model_validate_json round-trip with custom INCOMPLETE serializer/validator pair); choose persistence shape (sibling JSON vs embedded vs separate store)."
+           origin="OCR spec §2 in-flight chore"
+           baseline="aff3c76">v3.0 ships `ExtractionTrace` with in-memory-identity-only semantics for the `INCOMPLETE` sentinel — `model_dump_json()` round-trips will not preserve the sentinel because no custom serializer/validator pair is wired. This is intentional per spec §6.2: persistence questions belong to the consumer-layer (CLI/GUI) session that introduces a storage transport, not to the in-memory contract that this plan establishes.
+      Method per spec §2 in-flight chore: when a consumer session lands trace persistence, define the canonical serialization shape. Recommendation (informational only; commitment lives in the consumer&apos;s session): adopt `model_dump_json()` / `model_validate_json()` as the canonical round-trip and ship a custom serializer/validator pair for `INCOMPLETE` (e.g., serialized as a tagged string and validated back to the sentinel via identity replacement). The same exercise resolves whether the trace persists alongside the trust as a sibling JSON, embedded in TrustData metadata, or in a separate store.
+      Exit criteria: a brief design note documenting the chosen persistence shape, ratified by the consumer session that introduces it. Blast radius: design note plus the consumer session&apos;s storage layer plus a small `trace.py` patch wiring the custom INCOMPLETE serializer. Gated by a consumer-layer session for trust persistence existing — no plan currently scheduled, so this chore stays open until that work surfaces. Cross-references plans index 5 (shared-firm-config / SharePoint) as a candidate co-located transport.</chore>
+    <chore index="34"
+           id="2026-05-15-spec-pipeline-convention-drift-discussion"
+           status="open"
+           type="simple"
+           expendable="false"
+           synopsis="Track two spec-pipeline drift points surfaced during plan-group #14 ingest: _cycle_range regex blocks letter-suffixed sub-cycles (e.g. §7.10a); threshold_check.py heading-locator keyed to legacy §5/§6 layout."
+           origin="surfaced during plan-group #14 re-ingest"
+           baseline="b5810fc">Two friction points to triage; no resolution proposed.
+      - Cycle-id letter-suffix support — start at `.claude/context/schema/simple-types.xsd:68-72` (`_cycle_range` regex).
+      - Section-drift robustness — start at the spec-pipeline plugin&apos;s `scripts/threshold_check.py` (heading-locator assumes §5 files / §6 cycles).</chore>
+    <chore index="35"
+           id="2026-05-18-anthropic-token-usage-ceiling-calibration"
+           status="open"
+           type="code"
+           expendable="false"
+           synopsis="Calibrate AnthropicBackend token-usage CI ceiling from N≥3 cycle-15 observations; pin a noise-tolerant percentile assertion in test_anthropic_backend_integration.py once enough observations have accumulated in Green commit messages."
+           origin="plan-group #14 spec-to-multi-plan plan-review"
+           baseline="82978cc">Plan-group #14 (instrumentation) cycle 15 ships observation-only: each live call&apos;s `response.usage` block is captured via test-side monkey-patch on `backend._client.messages.create`, printed to stdout, and recorded in the Green commit message. No in-test ceiling assertion lands in Plan A.
+      Rationale (per plan-review I1): with extended thinking enabled (spec §8.3) and only N=1 observation available at execution time, a pinned ceiling of 1.5× one warm-cache observation is noise-bait — token counts vary substantially on identical prompts and CI would flake. Spec §9.2&apos;s &quot;calibrated at execution time&quot; is satisfied by recording, not by asserting.
+      Surface-ready when: ≥3 observations per mechanism (`output_config` and `tool_use`) accumulate across separate opt-in cycle-15 runs. The credit-cap gate (auto-memory project-anthropic-api-credit-cap; ANTHROPIC_SMOKE_CONFIRM_SPEND=y) means observations accrue slowly — likely ~3 weeks of normal opt-in smoke usage. The chore stays open until observations exist; it does NOT need a session to babysit accumulation.
+      Method when surface-ready: (a) grep `git log --grep=&apos;cycle 15&apos; --grep=&apos;response.usage&apos;` for the per-mechanism observation rows; (b) compute a noise-tolerant percentile per mechanism (working starting point: `max(observed) × 1.5` OR `p95 × 1.2`, whichever is higher — pick after looking at actual variance); (c) land a Red→Green cycle in `test_anthropic_backend_integration.py` adding `_TOKEN_USAGE_CEILING_&lt;MECHANISM&gt;: Final[int] = N` constants and asserting `response.usage.input_tokens + response.usage.output_tokens &lt; _TOKEN_USAGE_CEILING_*` per parametrized branch; (d) commit message records the observation set and the percentile choice.
+      Blast radius: `tests/v3/extraction/test_anthropic_backend_integration.py` only. Does NOT touch `anthropic_backend.py` (no `_last_usage` attribute added per plan-group #14 M4 + I1 resolution).
+      Cross-references: plan-group #14 instrumentation cycle 15 (`docs/superpowers/plans/2026-05-14-anthropic-extraction-backend-instrumentation.md`); auto-memory `project-anthropic-api-credit-cap`; auto-memory `project-anthropic-api-gate-outcomes`.
+      Suggested dispatch tier: code-chore interpretive (sonnet) — selecting the percentile from observed variance is light judgment beyond mechanical transcription.</chore>
+    <chore index="36"
+           id="2026-05-18-instrumentation-plan-md-fixture-name-drift"
+           status="open"
+           type="simple"
+           expendable="false"
+           synopsis="Plan-group #14 instrumentation plan-md cites non-existent `_make_minimal_anthropic_response()` 4x (L493/710/914/951); core defines `_make_mock_anthropic_message_with_text` instead. Cycle 9 Red NameErrors. Close before wave 2."
+           origin="plan-group #14 sequence-multi-plan plan-review (Finding 2)"
+           baseline="82978cc">Drift between sibling plan-mds within plan-group #14 (`2026-05-14-anthropic-extraction-backend`). Instrumentation cycle 8 Stage B, cycle 9 Stages A/B, and cycle 11 reference `_make_minimal_anthropic_response()` — a helper neither defined by core nor by the instrumentation plan-md itself.
+      Instrumentation acknowledges the drift in a comment at line 518 (&quot;If core&apos;s test_anthropic_backend.py named it differently, replace the call with that helper&quot;) but punts discovery to execution time. Without resolution, the first instrumentation Red in cycle 9 (or cycle 8 if its Stage B Red runs first) NameErrors before the assertion shape even gets exercised.
+      Method when surface-ready (gating exec-multi-plan dispatch of wave 2):
+      (a) Choose a target fixture name from core&apos;s actual set. Recommended: `_make_mock_anthropic_message_with_text(json.dumps({&quot;grantors&quot;: [], &quot;beneficiaries&quot;: []}))` — instrumentation cycles 8/9/11 only need a non-crashing mock response; tool_use vs text shape is irrelevant for those tests (they assert on captured kwargs, not on the response body).
+      (b) Replace all 4 call sites in `docs/superpowers/plans/2026-05-14-anthropic-extraction-backend-instrumentation.md` (lines 493, 710, 914, 951) with the chosen fixture call.
+      (c) Update the comment at line 518 to reflect the rename and remove the &quot;if core named it differently&quot; hedge.
+      Blast radius: `docs/superpowers/plans/2026-05-14-anthropic-extraction-backend-instrumentation.md` ONLY. Does NOT touch src/, tests/, sequence.xml, splits.xml, chores.xml, plans.xml.
+      Cross-references: plan-group #14 sequence-multi-plan plan-review Finding 2; core plan-md fixture definitions at lines 1316 (`_make_mock_anthropic_message_with_tool_use`), 1508 (`_make_mock_anthropic_message_with_text`), 1721 (`_make_pdf_fixture`).
+      Dependency: this chore MUST close before `/spec-pipeline 2026-05-14-anthropic-extraction-backend` is invoked next (which will route to `exec-multi-plan` since sequence-md is now non-empty). Otherwise wave 2 dispatch is doomed.
+      Suggested dispatch tier: simple-chore mechanical (gpt-5-mini or gpt-4.1) — pure rename across 4 plan-md call sites + 1 comment update; no interpretation beyond picking the target fixture name (already recommended above).</chore>
+    <chore index="37"
+           id="2026-05-18-spec-5-3-co-grantor-dematerialization-branch"
+           status="closed"
+           type="simple"
+           expendable="false"
+           synopsis="Amend spec §5.3 step 4 to add an explicit dematerialization branch for the (post-mutation no-co_grantor state + already-populated co_grantor) case. Resolves contradiction with §6.7 row 1's jt_mr_to_in_um expected_co_grantor_present=False."
+           origin="plan-group #15 spec-to-multi-plan; docx-teammate find"
+           baseline="562617f"
+           fulfillment="275bb51">Current §5.3 step 4 covers only (i) "post-mutation should-exist + currently None → materialize as GrantorInfo()" and (ii) "already populated → preserve". It does NOT cover (iii) "post-mutation should-NOT-exist + already populated", which is the case §6.7 row 1 (jt_mr_to_in_um) lands in. Seed (JT, MR) `promote_seed`s to a TrustData with co_grantor = GrantorInfo() (materialized-but-empty per `promote_seed` spec §6.2.3). Parser then transitions to (IN, UM). §5.3 step 4 as written says preserve; §6.7 row 1 expects co_grantor absent. Lead resolution (option a, approved 2026-05-18): add a conditional dematerialization branch distinguishing seed-materialized-empty from paralegal-populated.
+
+      Amendment to §5.3 step 4 (lead-approved verbatim text — insert as a new bullet between the existing "materialization" rule and the "preservation" rule):
+
+      &gt; **Dematerialization branch:** if the post-mutation state is one where `co_grantor` should NOT exist (`trust_type != JOINT` AND `marital_status != MARRIED`) AND `result.co_grantor` is a default-only `GrantorInfo()` (no fields populated beyond schema defaults — check via `result.co_grantor == GrantorInfo()`), dematerialize by setting `result.co_grantor = None`. If `result.co_grantor` is populated (any field differs from schema defaults), preserve it; the populated data is meaningful and dropping it would breach the bounded-context translation invariant.
+
+      The existing "If `co_grantor` is already populated, preserve it ..." sentence remains as the fallback when the dematerialization branch does not fire.
+
+      Also: add a new Decision log entry (Decision #21): "Distinguish seed-materialized-empty from paralegal-populated co_grantor in §5.3 step 4. Dematerialize the former on post-mutation no-co_grantor states; preserve the latter unconditionally. Resolves contradiction with §6.7 row 1 (jt_mr_to_in_um)."
+
+      Blast radius: `docs/superpowers/specs/2026-04-23-parser-migration-design.md` only. No `src/` or `tests/` change. No `splits.xml` or `plans.xml` change.
+
+      Method: mechanical edit at fixed location. Insert the new bullet text between line 207 (the existing "If `co_grantor` is already populated" sentence) and the next protocol bullet (about "Combinatorial cycle-5 coverage"); append a Decision #21 entry at the end of the Decision log table near line 892.
+
+      Suggested dispatch tier: simple-chore mechanical (gpt-5-mini) — purely text edit at explicit locations with lead-provided verbatim replacement text.
+
+      Cross-references: plan-group #15 plan-md `docs/superpowers/plans/2026-04-23-parser-migration-docx.md` (cycle §6.7 implementation depends on this amendment landing; the plan-md will cite chore #37 as the authority for the dematerialization branch); spec sections §5.3 step 4 (line 207), §6.7 row 1 (line 578), Decision log (line 892).</chore>
+    <chore index="38" id="2026-05-19-pyproject-blast-radius-implies-pixi-env" status="closed" type="simple" expendable="false" synopsis="Codify splits.xml convention: in pixi-managed projects, when a plan-group's blast-radius includes pyproject.toml, it implicitly includes pixi.toml + pixi.lock as transactional mirrors of the same logical pin." origin="plan-group #14 wave-1 cycle 4 deviation" baseline="8fd8aee" fulfillment="5f13491">Surfaced during exec-multi-plan for plan-group 2026-05-14-anthropic-extraction-backend wave 1 cycle 4 (commit ff50cf7): `pixi add --pypi anthropic` is a transactional operation that atomically edits pyproject.toml, pixi.toml, and pixi.lock. The cycle's splits.xml blast-radius declared pyproject.toml only, leaving pixi.toml + pixi.lock outside scope; splitting them would force pixi.lock drift (the resolved env state would no longer match the declared pin), a strictly worse failure mode than mild blast-radius widening.
+
+      The lead-user policy decision (recorded 2026-05-19): accept cycle 4 as-is, codify the rule for future plan-groups via this chore.
+
+      Remediation scope (simple chore, doc-only):
+
+      1. CLAUDE.md (`/home/ramda/code/trust-generator/CLAUDE.md`) — add a sentence to the "Conventions" section stating: "In any plan-group whose blast-radius includes `pyproject.toml`, the blast-radius implicitly extends to `pixi.toml` and `pixi.lock` for the duration of dep-add cycles (atomic-edit semantics of `pixi add --pypi`). Plans should NOT enumerate pixi.toml/pixi.lock separately in splits.xml; treat them as transactional mirrors of the pyproject pin."
+
+      2. (Optional, non-blocking) `.claude/context/schema/splits.xsd` — consider whether to encode this rule schematically (likely not — schema is structural, this rule is semantic). If not encoded, the CLAUDE.md statement is canonical.
+
+      Blast radius: `CLAUDE.md` only. No `src/` or `tests/` change. No `splits.xml` or `plans.xml` change. No `pixi.toml`/`pixi.lock` change (this chore documents the rule that just got exercised; the dep-add itself is already committed).
+
+      Method: mechanical text-insertion at a documented location. Suggested dispatch tier: simple-chore mechanical (gpt-5-mini) or simple-chore interpretive (gpt-5.4-mini) if the wording requires tuning for project tone.
+
+      Cross-references: plan-group #14 wave-1 cycle 4 commit ff50cf7 (the precipitating deviation); CLAUDE.md "Conventions" section (target of the edit).</chore>
+    <chore index="39" id="2026-05-19-anthropic-sdk-pin-memory-observation" status="closed" type="simple" expendable="false" synopsis="Add a memory observation recording the anthropic SDK pin (>=0.103.1) selected by plan-group 2026-05-14-anthropic-extraction-backend wave-1 cycle 4." origin="plan-group #14 wave-1 cycle 4 plan-md §Step 8" baseline="f072ee0">Plan-md cycle 4 §Step 8 prescribed a `mcp__memory__add_observations` call to record the SDK pin selection rationale for future plan-groups (the &quot;library_selections&quot; entity). The plan-executor-team agent's tool surface does not include the MCP memory tools, so the teammate correctly surfaced this as a chore-entry suggestion (per the plan-md's documented fallback).
+
+      Remediation scope (simple chore, single MCP tool call):
+
+      Invoke `mcp__memory__add_observations` on entity `library_selections` with the observation text:
+
+      &quot;anthropic SDK pinned at &gt;=0.103.1 in plan-group 2026-05-14-anthropic-extraction-backend, child plan core (cycle 4). Verified at v0.103.1 via direct signature introspection of `anthropic.Anthropic().messages.create`: native kwargs for output_config, thinking, tool_choice, tools, system, messages, max_tokens, and top-level cache_control. All four spec §5 features (PDF document blocks, extended thinking, cache_control breakpoints on system + content + tools, both tool_use + output_config GA mechanisms) are exposed as declared parameters, not via **kwargs fallback. Exception ctors audited for cycle 10a-d (APIConnectionError, RateLimitError, AuthenticationError, APIError) — all accept MagicMock-duck-typed httpx.Request/Response.&quot;
+
+      Blast radius: MCP memory store only. No `src/`, `tests/`, or repo-file edit.
+
+      Method: single tool call by a dispatching session with MCP memory tools in its surface. Suggested dispatch: lead-side direct invocation (not chore-executor), since the chore is a single MCP call rather than a code/text edit. If routed through exec-simple-chore: requires a copilot-cli env with memory MCP server enabled, which is not the standard.
+
+      Cross-references: plan-group #14 wave-1 cycle 4 commit ff50cf7 (the SDK pin); plan-md `docs/superpowers/plans/2026-05-14-anthropic-extraction-backend-core.md` cycle 4 §Step 8 (the fallback instruction).</chore>
+    <chore index="40" id="2026-05-19-sequence-xml-test-path-prefix-bug" status="closed" type="simple" expendable="false" synopsis="Fix path prefix bug in 2026-05-14-anthropic-extraction-backend-sequence.xml seam-preservation project-test gate: path uses `tests/v3/...` but pixi run test has cwd=tests/, so resolvable path is `v3/...`." origin="plan-group #14 wave-1 gate execution 2026-05-19" baseline="f072ee0" fulfillment="f41953d">During the wave-1 gate execution of plan-group 2026-05-14-anthropic-extraction-backend, the `seam-preservation` invariant's `project-test` sub-gate failed to collect any tests because the gate command was written as:
+
+      `pixi run test -- tests/v3/extraction/test_anthropic_backend.py::test_prompt_module_reexports_build_intake_prompt_for_ollama_backend_compat`
+
+      The project's `pixi run test` task runs with `cwd=tests/` (per CLAUDE.md and pixi.toml task definition), so the correct path is `v3/extraction/test_anthropic_backend.py::...` (without the `tests/` prefix). The gate as-written returned `collected 0 items` and exit-code 0 — a silent false-pass.
+
+      The wave-1 gate ran with the corrected path and PASSED (1 test collected, passed). The functional behavior is verified; only the gate definition is wrong.
+
+      Remediation scope (simple chore, mechanical):
+
+      Edit `docs/superpowers/multi/2026-05-14-anthropic-extraction-backend-sequence.xml`:
+        - Line 83: change `pixi run test -- tests/v3/extraction/test_anthropic_backend.py::...` to `pixi run test -- v3/extraction/test_anthropic_backend.py::...`
+
+      Also audit the rest of sequence.xml for any other `tests/` prefix on `pixi run test` invocations.
+
+      IMPORTANT: This edit MUST land AFTER plan-group 2026-05-14-anthropic-extraction-backend closes — sequence.xml is read-only during execution per spec-pipeline invariant #13. Land via exec-simple-chore in a session AFTER the plan-group's status flips to &quot;closed&quot;.
+
+      Blast radius: `docs/superpowers/multi/2026-05-14-anthropic-extraction-backend-sequence.xml` only. No `src/`, `tests/`, or `splits.xml` change.
+
+      Method: mechanical sed-equivalent edit at a fixed line. Suggested dispatch tier: simple-chore mechanical (gpt-5-mini).
+
+      Cross-references: sequence.xml line 83 (the buggy gate definition); plan-group #14 wave-1 gate execution log (2026-05-19); spec-pipeline invariant #13 (read-only-during-execution).</chore>
+    <chore index="41" id="2026-05-19-sequence-xml-test-model-coupling-invariant-bug" status="closed" type="simple" expendable="false" synopsis="Fix the test-model-coupling invariant in the anthropic-extraction-backend sequence.xml: it checks a non-existent `AnthropicBackend.__init__` `model` default (spec §6 forbids it). Re-author the gate to check _TEST_MODEL == _DEFAULT_MODEL coherence." origin="plan-group #14 wave-2 gate execution 2026-05-19" baseline="ea01891" fulfillment="951c254">During the wave-2 gate execution of plan-group 2026-05-14-anthropic-extraction-backend, the `test-model-coupling` invariant's `peer-symbol-check` gate failed. The gate command is:
+
+      `pixi run python -c "import inspect; from trust_generator.v3.extraction.anthropic_backend import AnthropicBackend; from tests.v3.extraction.test_anthropic_backend import _TEST_MODEL; sig = inspect.signature(AnthropicBackend.__init__); default = sig.parameters['model'].default; assert default == _TEST_MODEL, ...; print('ok')"`
+
+      The gate presupposes `AnthropicBackend.__init__` has a *default* value for the `model` parameter. It does not — and cannot: spec §6 (design-md line 634) explicitly states "The constructor takes `model` as a required argument. The spec does not commit to a default ... Hard-coding a default in code is rejected — `model` stays required to keep the `backend_id` honest." So `sig.parameters['model'].default` is `inspect._empty`, and the gate's `assert default == _TEST_MODEL` fails by construction.
+
+      The invariant was authored (during sequence-multi-plan) against a counterfactual spec where the ctor carries a default. The implementation correctly followed the actual spec.
+
+      DISPOSITION TAKEN (lead-user decision, 2026-05-19): the invariant's *intent* — prevent silent drift between the test model and the production/canonical model — is preserved by the implementation. A substitute check was run inline during the wave-2 gate and PASSED:
+
+      `pixi run python -c "from tests.v3.extraction.test_anthropic_backend import _TEST_MODEL; from tests.v3.extraction.test_anthropic_backend_integration import _DEFAULT_MODEL; assert _TEST_MODEL == _DEFAULT_MODEL; print('ok')"`
+
+      Both constants equal "claude-sonnet-4-6". The plan-group was closed on the substitute check; this chore tracks the sequence.xml correction.
+
+      Remediation scope (simple chore, mechanical):
+
+      Edit `docs/superpowers/multi/2026-05-14-anthropic-extraction-backend-sequence.xml`, the `test-model-coupling` invariant block (around lines 86-91):
+        - Replace the `peer-symbol-check` gate command with the substitute form: assert `tests.v3.extraction.test_anthropic_backend._TEST_MODEL == tests.v3.extraction.test_anthropic_backend_integration._DEFAULT_MODEL`.
+        - Update the `&lt;constraint&gt;` text to describe the actual drift surface (two test-file model constants must agree), not a non-existent ctor default.
+
+      IMPORTANT: land AFTER plan-group 2026-05-14-anthropic-extraction-backend closes (sequence.xml read-only during execution per spec-pipeline invariant #13). By the time this chore is dispatched the plan-group is already closed, so the read-only constraint no longer binds.
+
+      Blast radius: `docs/superpowers/multi/2026-05-14-anthropic-extraction-backend-sequence.xml` only.
+
+      Method: mechanical edit at a fixed invariant block. Suggested dispatch tier: simple-chore interpretive (gpt-5.4-mini) — the constraint-text rewrite needs light interpretation.
+
+      Cross-references: sequence.xml `test-model-coupling` invariant block; spec design-md line 634 (the required-model rule); plan-group #14 wave-2 gate execution log (2026-05-19); chore #40 (sibling sequence.xml gate bug — consider batching the two sequence.xml fixes into one dispatch).</chore>
+    <chore index="42"
+           id="2026-05-19-sequence-co-grantor-dematerialization-gate-path-fix"
+           status="closed"
+           type="simple"
+           expendable="false"
+           synopsis="Fix path in sequence.xml co-grantor-dematerialization project-test gate: `tests/v3/parsers/test_docx_parser.py` → `v3/parsers/test_docx_parser.py` (pixi test task has cwd=tests/, so paths must be cwd-relative)."
+           origin="plan-group #15 exec-multi-plan wave-2 gate execution"
+           baseline="910d6c2"
+           fulfillment="5e86e58">During wave-2 gate execution for plan-group #15 (parser-migration), the `co-grantor-dematerialization` invariant&apos;s third sub-gate (kind=&quot;project-test&quot;) failed to execute as written:
+
+      `pixi run test -- tests/v3/parsers/test_docx_parser.py -k post_promotion`
+
+      Result: `ERROR: file or directory not found: tests/v3/parsers/test_docx_parser.py`. Reason: the pixi `test` task has `cwd=tests/` (per CLAUDE.md task definition), so any path argument is resolved relative to `tests/`. `tests/v3/parsers/test_docx_parser.py` is interpreted as `tests/tests/v3/parsers/test_docx_parser.py`, which does not exist.
+
+      Lead correction applied at execution time (semantic equivalence): `pixi run test -- v3/parsers/test_docx_parser.py -k post_promotion` — 5 passed, 12 deselected. The five passing tests are the four combinatorial post-promotion-protocol mutation cases (`jt_mr_to_in_um`, `in_um_to_jt_mr`, `jt_mr_to_in_mr`, `in_mr_to_jt_mr`) plus `test_post_promotion_protocol_none_gate_preserves_seed_value`. Project gate `pixi run check` independently passes (383 passed), which transitively verifies the same tests via the full-suite collection.
+
+      Per invariant #13 (sequence.xml read-only during execution), this defect is opened as a chore rather than silently rewritten. The wave-2 gate was treated as passing on the basis of the corrected-path execution and the independent project-gate verification.
+
+      Blast radius: `docs/superpowers/multi/2026-04-23-parser-migration-sequence.xml` only — one-character edit to the gate command. No `src/` or `tests/` change.
+
+      Method: mechanical regex replace within the `&lt;invariant id=&quot;co-grantor-dematerialization&quot;&gt;` block — change `tests/v3/parsers/test_docx_parser.py` → `v3/parsers/test_docx_parser.py` in the `&lt;gate kind=&quot;project-test&quot;&gt;` element. Sanity-check after edit: `pixi run test -- v3/parsers/test_docx_parser.py -k post_promotion` should still pass (will if no test changes intervened).
+
+      Suggested dispatch tier: simple-chore mechanical (gpt-5-mini) — purely text edit at a fixed location with verbatim replacement text.
+
+      Cross-references: plan-group #15 sequence file at `docs/superpowers/multi/2026-04-23-parser-migration-sequence.xml`; spec-pipeline invariant #13; CLAUDE.md pixi test task definition (`cwd=tests/`).</chore>
+    <chore index="43"
+           id="2026-05-21-spec-pipeline-chore-authoring-xsd-validation-gap"
+           status="closed"
+           type="simple"
+           expendable="false"
+           synopsis="spec-pipeline chore-authoring (ingest-spec, scope-maintenance) wrote chores #38-41 violating chores.xsd — over-length attrs, missing baseline, unescaped tag — no validation gate. Add an XSD-validation step to chore authoring; audit for drift."
+           origin="surfaced closing chores #38-41 (XSD-invalid entries)"
+           baseline="99da9a9"
+           fulfillment="883d36c">During the session closing chores #38-41 (2026-05-21), `chores.xml` was found to fail `chores.xsd` validation, and had been failing since those entries were authored on 2026-05-19 (commits 8fd8aee / f072ee0 / ea01891). Four violation classes: `origin` over the 60-char `_short_desc` limit on all four; `synopsis` over the 250-char `_long_desc` limit on #41; the required `baseline` attribute missing on all four; an unescaped `&lt;constraint&gt;` tag in #41&apos;s body making the file non-well-formed XML. The entries themselves were repaired in commit 99da9a9.
+
+      Root cause (what this chore tracks): the spec-pipeline chore-authoring workflows — `ingest-spec` and the `scope-maintenance` protocol that plan/chore executors use to raise mid-execution chore-entries — write `&lt;chore&gt;` elements with no XSD-validation step. Two days of malformed canonical state went uncaught.
+
+      Remediation (lands in the spec-pipeline plugin SOURCE repo, crosbycrosbylaw-plugins-official — NOT this repo, and NOT the plugin cache, which is overwritten on plugin update):
+      1. Add an XSD-validation step (`xmllint --noout --schema` or equivalent) to every workflow that writes `chores.xml` or `plans.xml` — `ingest-spec`, `scope-maintenance`, and the status-flip step of `exec-code-chore` / `exec-simple-chore` — blocking on validation failure.
+      2. Consider a pre-commit gate or PostToolUse hook as a defense-in-depth backstop.
+      3. Audit the current `chores.xml` and `plans.xml` for any other latent violations.
+
+      Blast radius: spec-pipeline plugin source files only (workflow reference XMLs, SKILL.md, scripts). No trust-generator `src/`, `tests/`, or repo-file change. Tracked in this registry because that is where the symptom surfaced; the fix is cross-project.
+
+      Dispatch: NOT suitable for routine `exec-simple-chore` (copilot-cli) dispatch — the remediation is cross-project design work (gate placement, failure surfacing). Handle as a dedicated session in the plugin source repo.
+
+      Cross-references: chores #38-41 (the malformed entries); repair commit 99da9a9; `chores.xsd` `_short_desc` / `_long_desc` / `_hash` facets; chore #34 (sibling spec-pipeline convention-drift tracking — consider batching).
+      <commit sha="1b61179"
+              scope="XSD-validation gates on chore/plan-authoring workflows"
+              role="contribution"/>
+      <commit sha="abf2434"
+              scope="registry-XSD validation hook backstop"
+              role="contribution"/></chore>
+    <chore index="44"
+           id="2026-05-21-spec-pipeline-scope-maintenance-protocol-undefined"
+           status="open"
+           type="simple"
+           expendable="false"
+           synopsis="`scope-maintenance` protocol is referenced across SKILL.md and 4 workflow files but has no definition file, yet it is the initial chore-authoring write-site. Author it with an embedded XSD-validation gate (chore #43 gated only later edits)."
+           origin="surfaced by chore #43 dispatch (1b61179)"
+           baseline="1b61179">The `scope-maintenance` protocol is named in `SKILL.md`, `exec-plan.xml`, `exec-multi-plan.xml`, `per-cycle-code-review.xml`, and both `plan-executor` agent definitions — it is the protocol executors invoke to raise a chore-entry or plan-entry mid-execution (the initial author of a `&lt;chore&gt;` element). It has NO procedural-definition file anywhere in the spec-pipeline plugin.
+
+      Surfaced by the chore #43 dispatch (claude-lib commit 1b61179): chore #43 added XSD-validation gates to every DEFINED chore/plan-authoring write-site, but those gates cover only subsequent edits (status flips, ingest-spec plan writes) — not a malformed INITIAL author. Because scope-maintenance has no definition, it could not be gated. The original four-entry malformation (chores #38-41) was almost certainly an initial-author defect, so this is the load-bearing gap.
+
+      Remediation: author the `scope-maintenance` protocol as a proper reference file in the spec-pipeline plugin source (`/home/ramda/code/claude-lib/src/development/spec-pipeline/skills/spec-pipeline/`), defining the procedure executors follow to classify and write a chore-entry or plan-entry, and embed an `xmllint --noout --schema` validation gate as a mandatory final step. Wire `per-cycle-code-review.xml`&apos;s `defer-chore` action and the `plan-executor` agents to the new definition.
+
+      NOTE: this is specification work — authoring a protocol, not a mechanical edit. It warrants human design review rather than a fully-autonomous merge.
+
+      Blast radius: spec-pipeline plugin source (claude-lib `unstable`). No trust-generator change. Tracked in this registry because chore #43, its parent finding, is tracked here.
+
+      Cross-references: chore #43 (parent — the validation-gap chore); claude-lib commit 1b61179 (added the partial gates and surfaced this gap); chore #34 (sibling spec-pipeline convention-drift tracking).
+      <commit sha="16bef752"
+              scope="DRAFT scope-maintenance protocol file"
+              role="contribution"/></chore>
+    <chore index="45"
+           id="2026-05-21-coercion-robustness-fixes"
+           status="closed"
+           type="code"
+           expendable="false"
+           synopsis="coercion.py robustness: _to_address must preserve the Address.country='US' schema default on 3-part input and warn on 4+ comma parts; _to_person_reference must narrow its except ValidationError and log a warning."
+           origin="pr-review-toolkit review of v3.0.0 (2026-05-21)"
+           baseline="99da9a9"
+           fulfillment="5c5660d">Three coercion.py findings from the 2026-05-21 pr-review-toolkit pass (code-reviewer + silent-failure-hunter).
+
+      1. H1 — `_to_address` (coercion.py ~line 106) passes `country=""` to `Address()` for 3-part input, clobbering the schema default `country="US"` (schema.py:273). Fix: omit the `country` kwarg unless a 4th part is present. The 3-part test (test_coercion.py) must gain a `country == "US"` assertion.
+      2. B3 — `_to_address` silently mis-shapes 4+ comma input (e.g. `"123 Main St, Apt 4, Springfield, IL 62704"`): "Apt 4" becomes city. Fix: emit a `log.warning` when `len(parts) > 4` (and/or when the heuristic is ambiguous) — do NOT change the soft-fail return, just surface it.
+      3. H2 — `_to_person_reference` (coercion.py:151) uses a broad `except ValidationError` that reinterprets ANY PersonReference validation failure as "is_entity", AND emits no warning — the lone silent soft-fail among the four helpers, violating the module docstring's stated policy. Fix: narrow the catch to the specific two-token-name validator failure, and add a `log.warning` consistent with the sibling helpers.
+
+      Blast radius: `src/trust_generator/v3/parsers/coercion.py`, `tests/v3/parsers/test_coercion.py`.
+
+      Dispatch tier: code-chore analytical (claude-opus-4-7) — narrowing the `except` correctly requires judgment about which PersonReference ValidationError to catch without masking unrelated schema breaks.</chore>
+    <chore index="46"
+           id="2026-05-21-anthropic-backend-error-handling"
+           status="closed"
+           type="code"
+           expendable="false"
+           synopsis="anthropic_backend.py error handling: _load_pdf_or_image inside the ExtractionError contract, wrap pypdf exceptions, disambiguate refusal from parse failure, pass through non-auth messages, gate needs_co_grantor; import hygiene + test backfill."
+           origin="pr-review-toolkit review of v3.0.0 (2026-05-21)"
+           baseline="99da9a9"
+           fulfillment="411811b">anthropic_backend.py findings from the 2026-05-21 pr-review-toolkit pass (silent-failure-hunter + code-reviewer + pr-test-analyzer).
+
+      1. H3 — `_load_pdf_or_image` is called at anthropic_backend.py:446, OUTSIDE the `try/except` (starts ~line 450). `source.stat()` / `source.open("rb")` raise raw `OSError`/`PermissionError`, escaping the `ExtractionProtocol` contract (only `ExtractionError` may surface). Fix: bring the call inside the mapped block or wrap it.
+      2. H4 (anthropic side) — anthropic_backend.py:526 builds `PdfReader(source)` for page counting; a corrupt/encrypted PDF raises raw `pypdf.errors.PdfReadError`/`FileNotDecryptedError`. Wrap as `ExtractionError`. Shared root cause with chore #47's pdf side — a small `pypdf`-exception adapter helper is acceptable.
+      3. A3 — empty-text-blocks `output_config` response (anthropic_backend.py:412-430) is misreported as `output_config JSON parse failure: ''`; it should surface `stop_reason` like the `tool_use` branch (line 393), so a content-policy refusal is distinguishable from a decode bug.
+      4. A4 — `_wrap_anthropic_error` fallback (anthropic_backend.py:611) drops the SDK message for ALL non-mapped errors. The api_key-hygiene rationale applies only to `AuthenticationError`; for `BadRequestError`/`InternalServerError`/etc. include the sanitized message body.
+      5. M — `needs_co_grantor` (anthropic_backend.py:182) returns `len(grantors) >= 2` regardless of content; an empty grantor[1] still materializes an empty `co_grantor` (line 265). Gate on whether grantor[1] produced any `FieldExtraction`.
+      6. Low — function-local `import json` (line 399), `base64`/`mimetypes` (lines 486-487) → move to module level per project norm.
+      7. Test backfill — add tests for: `_load_pdf_or_image` not-found raises `ExtractionError` not `FileNotFoundError`; unsupported-MIME rejection; `output_config` text decoding to a JSON non-mapping; `tool_use.input` non-dict.
+
+      Blast radius: `src/trust_generator/v3/extraction/anthropic_backend.py`, `tests/v3/extraction/test_anthropic_backend.py`.
+
+      Dispatch tier: code-chore analytical (claude-opus-4-7) — restructuring the error-mapping boundary and refusal disambiguation requires judgment beyond a prescribed edit.</chore>
+    <chore index="47"
+           id="2026-05-21-pdf-parser-error-wrap-and-beneficiaries"
+           status="closed"
+           type="code"
+           expendable="false"
+           synopsis="pdf_parser.py: wrap pypdf exceptions per the parse_pdf contract; add children / other_beneficiaries / beneficiary_shares extraction from numbered AcroForm fields (mirroring the withdrawal/successor-trustee pattern); backfill PDF test coverage."
+           origin="pr-review-toolkit review of v3.0.0 (2026-05-21)"
+           baseline="99da9a9"
+           fulfillment="b881320">pdf_parser.py findings from the 2026-05-21 pr-review-toolkit pass plus the investigated PDF/docx parity gap.
+
+      1. H4 (pdf side) — `PdfReader(str(filepath))` at pdf_parser.py:105 raises raw `pypdf` exceptions (`PdfReadError`/`FileNotDecryptedError`) on a corrupt/encrypted PDF; `parse_pdf`'s documented contract enumerates only `FileNotFoundError`. Wrap pypdf failures into the documented error type (shared root cause with chore #46 item 2 — reuse the same adapter approach).
+      2. PDF beneficiary parity — `pdf_parser` extracts grantor/co_grantor/trust-id/withdrawal/successor-trustees but NOT `children` / `other_beneficiaries` / `beneficiary_shares` (schema.py:865/867/890), while `docx_parser` extracts all three (docx_parser.py:112-115,215-224,523-577). Investigation 2026-05-21: spec-faithful (the v2-inherited fillable PDF asset has 32 AcroForm fields, none for beneficiaries) but a real intake-format asymmetry. RESOLUTION (lead decision): add parser-side extraction for the three categories from numbered AcroForm fields, following the SAME convention as pdf_parser's existing `withdrawal[i].*` and numbered successor-trustee handling, using `docx_parser` + the schema models (`Child`, `OtherBeneficiary`, `BeneficiaryShare`) as the shape reference. Tests construct synthetic PDFs (reportlab) carrying the new fields — no dependency on the current asset. The fillable-PDF GENERATOR side is out of scope here, noted as a cross-reference.
+      3. Test backfill — the PDF unknown-enum fallback branches (`trust_type`/`marital_status`, pdf_parser.py:117-139) have no test; PDF `marital_status` field-mutation, `co_grantor` round-trip, and the `successor_trustees[i]` numbered-field loop are untested.
+
+      Blast radius: `src/trust_generator/v3/parsers/pdf_parser.py`, `tests/v3/parsers/test_pdf_parser.py`.
+
+      Dispatch tier: code-chore analytical (claude-opus-4-7) — choosing the numbered AcroForm field-name convention for the three new categories is a design decision surfaced mid-task.</chore>
+    <chore index="48"
+           id="2026-05-21-docx-extract-flat-list-header-diagnostic"
+           status="closed"
+           type="code"
+           expendable="false"
+           synopsis="docx_parser._extract_flat list-header detection is first-row-only: a list table preceded by a title/spacer row matches no handler and yields nothing silently. Add a log when a multi-row table matches no handler so template drift is visible."
+           origin="pr-review-toolkit review of v3.0.0 (2026-05-21)"
+           baseline="99da9a9"
+           fulfillment="60b0018">Low-severity finding from the 2026-05-21 pr-review-toolkit code-reviewer pass.
+
+      `docx_parser._extract_flat` (docx_parser.py:204-225) checks only `rows[0]` col-0 against `_LIST_TABLE_HEADERS`. A list table preceded by a title or spacer row is missed entirely — its rows fall through the checkbox/label scan and produce nothing, with no diagnostic. Template drift therefore fails silently.
+
+      Fix: emit a `log` line (debug or warning) when a table has more than one row but matched no handler (header / checkbox / label). Do NOT restructure the row-dispatch — minimal diagnostic only.
+
+      Blast radius: `src/trust_generator/v3/parsers/docx_parser.py`.
+
+      Dispatch tier: code-chore interpretive (claude-sonnet-4-6) — a localized diagnostic insert with light judgment on log level and the no-handler-matched condition.</chore>
+    <chore index="49"
+           id="2026-05-21-extraction-trace-field-path-validator"
+           status="closed"
+           type="code"
+           expendable="false"
+           synopsis="ExtractionTrace's field_path-uniqueness invariant is enforced in one method, not at construction. Add a Pydantic @model_validator that rejects duplicate field_path entries at construction, so the invariant holds for every instance."
+           origin="pr-review-toolkit review of v3.0.0 (2026-05-21)"
+           baseline="99da9a9"
+           fulfillment="1cc7f7e">Type-design finding from the 2026-05-21 pr-review-toolkit type-design-analyzer pass.
+
+      `ExtractionTrace` (src/trust_generator/v3/extraction/trace.py) documents a `field_path`-uniqueness invariant and enforces it inside one mutation method, but a trace constructed directly with duplicate `field_path` entries bypasses the check. Fix: add a Pydantic v2 `@model_validator(mode="after")` that raises on duplicate `field_path` values, so the invariant is construction-enforced for every instance.
+
+      Blast radius: `src/trust_generator/v3/extraction/trace.py`, `tests/v3/extraction/test_trace.py`.
+
+      Dispatch tier: code-chore interpretive (claude-sonnet-4-6) — a small, well-specified validator addition with a clear contract.</chore>
+    <chore index="50"
+           id="2026-05-21-registry-dispatch-test-backfill"
+           status="closed"
+           type="code"
+           expendable="false"
+           synopsis="registry test gaps: parse_file's missing-seed guard is tested only for .docx (.pdf shares the gate, unparametrized); extension case-insensitivity (.JSON/.PDF) is unpinned — an uppercase extension breaking dispatch would go uncaught."
+           origin="pr-review-toolkit review of v3.0.0 (2026-05-21)"
+           baseline="99da9a9"
+           fulfillment="d2082fc">Test-coverage finding from the 2026-05-21 pr-review-toolkit pr-test-analyzer pass.
+
+      In `tests/v3/parsers/test_registry.py`: (1) `parse_file`'s missing-`seed_initialized` `ValueError` guard is tested for `.docx` only — parametrize the `.pdf` branch which shares the gate. (2) Extension dispatch relies on `suffix.lower()` but no test pins case-insensitivity — add tests that `.JSON` / `.PDF` / `.DOCX` dispatch identically to lowercase. If dispatch is NOT actually case-insensitive, raise that as a finding rather than asserting current behavior.
+
+      Blast radius: `tests/v3/parsers/test_registry.py` (test-only unless a real dispatch bug is found in `registry.py`).
+
+      Dispatch tier: code-chore interpretive (claude-sonnet-4-6) — test authoring with light judgment; may surface a real bug needing a registry.py fix.</chore>
+    <chore index="51"
+           id="2026-05-21-json-parser-unicode-error-contract"
+           status="closed"
+           type="code"
+           expendable="false"
+           synopsis="json_parser.parse_json's error contract omits UnicodeDecodeError, but read_text('utf-8') on a non-UTF-8 file raises it, leaking through the enumerated contract. Reconcile docstring and behavior — wrap as ValueError or document the hard-fail."
+           origin="pr-review-toolkit review of v3.0.0 (2026-05-21)"
+           baseline="99da9a9"
+           fulfillment="cc5a3aa">Low-severity finding from the 2026-05-21 pr-review-toolkit silent-failure-hunter pass.
+
+      `json_parser.parse_json` (json_parser.py:43) does `read_text(encoding="utf-8")`; a non-UTF-8 file raises `UnicodeDecodeError` (a `ValueError` subclass), which is not in the module docstring's enumerated error contract. Decide and apply ONE of: (a) wrap it as the documented `ValueError` with the "JSON validation failed for ..." phrasing for contract uniformity, or (b) explicitly document `UnicodeDecodeError` as an admitted hard-fail. The executor picks based on what keeps the CLI caller contract cleanest; record the choice in the commit message.
+
+      Blast radius: `src/trust_generator/v3/parsers/json_parser.py`, `tests/v3/parsers/test_json_parser.py`.
+
+      Dispatch tier: code-chore interpretive (claude-sonnet-4-6) — a small contract decision (wrap vs document) with light judgment.</chore>
+    <chore index="52"
+           id="2026-05-21-to-decimal-optional-return-type"
+           status="closed"
+           type="code"
+           expendable="false"
+           synopsis="_to_decimal returns Decimal(0) on parse failure — lossy and type-invisible, the only dishonest signature of the four soft-fail helpers. Change the return type to Decimal | None, update docx/pdf_parser callers; also handle $-prefixed negatives."
+           origin="pr-review-toolkit review of v3.0.0 (2026-05-21)"
+           baseline="99da9a9"
+           fulfillment="441fbe4">Type-design finding from the 2026-05-21 pr-review-toolkit type-design-analyzer pass, plus a Low code-reviewer finding.
+
+      `_to_decimal` (coercion.py) returns `Decimal(0)` on unparseable input — lossy (a real zero is indistinguishable from a parse failure) and type-invisible, the only dishonest signature among the four soft-fail helpers (`_to_date` returns `date | None`). Change the return type to `Decimal | None`, returning `None` on soft-fail, and update every caller in `docx_parser.py` and `pdf_parser.py` to handle `None` (most callers feed schema fields with their own defaults; the §5.4.2 share-percent row-drop logic already branches on parse failure and should consume `None` directly). Also fix the Low finding: `_to_decimal` mishandles a `$`-prefixed negative (`"-$50.00"`) because `lstrip("$")` runs before sign handling — use `.replace("$", "")`.
+
+      EXECUTION ORDER: this chore's blast radius overlaps chores #45 (coercion.py), #47 (pdf_parser.py), and #48 (docx_parser.py). It MUST be dispatched AFTER #45/#47/#48 have closed, so the caller-ripple edits land on already-fixed files.
+
+      Blast radius: `src/trust_generator/v3/parsers/coercion.py`, `src/trust_generator/v3/parsers/docx_parser.py`, `src/trust_generator/v3/parsers/pdf_parser.py`, `tests/v3/parsers/test_coercion.py` (+ caller tests).
+
+      Dispatch tier: code-chore analytical (claude-opus-4-7) — a return-type change rippling across multiple callers; each call site needs judgment on how to treat `None`.</chore>
+  </chores>
 </reference>

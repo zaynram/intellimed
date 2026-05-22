@@ -1,18 +1,117 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-    <xs:include schemaLocation="common.xsd" />
-    <xs:element name="reference">
-        <xs:complexType>
-            <xs:sequence>
-                <xs:element name="plans">
-                    <xs:complexType>
-                        <xs:sequence minOccurs="0">
-                            <xs:element name="plan" type="_entry" />
-                        </xs:sequence>
-                    </xs:complexType>
-                </xs:element>
-            </xs:sequence>
-            <xs:attributeGroup ref="REFERENCE" />
-        </xs:complexType>
-    </xs:element>
+  <xs:include schemaLocation="common.xsd" />
+  <xs:complexType name="_plan_entry">
+    <xs:complexContent>
+      <xs:extension base="_entry">
+        <xs:attribute name="spec-md"
+                      type="_path"
+                      use="required">
+          <xs:annotation>
+            <xs:documentation>The path to the specification file, relative to project root. Must be empty or match path regex.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="plan-md"
+                      type="_path"
+                      use="required">
+          <xs:annotation>
+            <xs:documentation>The path to the implementation plan file, relative to project root. Must be empty or match path regex.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <!-- Theme B addition: optional worktree requirement for single-plan execution. -->
+        <xs:attribute name="worktree"
+                      type="_worktree_req"
+                      use="optional"
+                      default="not-required">
+          <xs:annotation>
+            <xs:documentation>Worktree requirement for single-plan execution. required = exec-plan auto-EnterWorktrees at dispatch step 2 and auto-ExitWorktrees at step 6 before invoking finishing-skill. not-required (default) = exec-plan does not touch worktree state. Default preserves backward compatibility with existing flat-plan entries pre-dating Theme B.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:complexType name="_grouped_plan_entry">
+    <xs:annotation>
+      <xs:documentation>A child plan within a &lt;plan-group&gt;. Extends _plan_entry (inheriting spec-md + plan-md + the base _entry attributes) with three coordination attributes mirrored from the corresponding entry in splits.xml: cycles (which spec cycles this child claims), depends-on (sibling-suffix prerequisites), and worktree (isolation requirement). Children's plan-mds are written by spec-to-multi-plan; spec-md is shared with the parent group.</xs:documentation>
+    </xs:annotation>
+    <xs:complexContent>
+      <xs:extension base="_plan_entry">
+        <xs:attribute name="cycles"
+                      type="_cycle_range"
+                      use="required">
+          <xs:annotation>
+            <xs:documentation>The spec-cycle ranges this child claims. See _cycle_range (simple-types.xsd) for grammar and examples. Mirrors the splits.xml cycles attribute; sequence-multi-plan validates the union of children's cycles covers the spec's §6 decomposition without overlap.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="depends-on"
+                      type="_suffix_list"
+                      use="required">
+          <xs:annotation>
+            <xs:documentation>Comma-separated list of sibling suffixes that must reach Green commits before this child can begin execution. Empty = no prerequisites (eligible for the first wave). References must resolve to other suffixes in the same plan-group; sequence-multi-plan validates the DAG. Mirrors the splits.xml depends-on attribute.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <!-- worktree is inherited as optional from _plan_entry (Theme B addition). exec-multi-plan enforces presence at dispatch time for grouped children. -->
+
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:complexType name="_plan_group">
+    <xs:annotation>
+      <xs:documentation>Container for a grouped collection of related child plans derived from a single spec via a splits.xml decomposition. Used when a feature's scope exceeds a single flat plan's capacity; sequence-multi-plan generates the group's execution DAG and exec-multi-plan dispatches teammates against children. Structurally distinguished from a flat plan by absence of plan-md (only children carry plan-md) and presence of splits-md + sequence-md — the slug resolver relies on this distinction. Inherited-attribute behavior specific to plan-groups: index shares its slot in plans.xml with flat plan entries (one slot per group); id is a date-prefixed slug matching the group-id on the corresponding plan-splits root in splits.xml, and child plan ids are derived as &lt;group-id&gt;-&lt;suffix&gt;; status carries child cross-constraints (not XSD-expressible, enforced by exec-multi-plan): open = no execution begun (no child is in-progress or closed), in-progress = at least one child is in-progress or closed and the group is not fully closed, closed = all children closed AND all sequence invariants have passed integration-checkpoint; synopsis spans all children and is drafted by ingest-spec from the spec's title/motivation; expendable follows the canonical _entry definition with no plan-group-specific override (set independently on the group and each child).</xs:documentation>
+    </xs:annotation>
+    <xs:complexContent>
+      <xs:extension base="_entry">
+        <xs:sequence>
+          <xs:element name="plan"
+                      type="_grouped_plan_entry"
+                      minOccurs="2"
+                      maxOccurs="unbounded">
+            <xs:annotation>
+              <xs:documentation>A child plan within the group. minOccurs=2 enforces that a single-child group is a flat plan in disguise — use a top-level &lt;plan&gt; instead.</xs:documentation>
+            </xs:annotation>
+          </xs:element>
+        </xs:sequence>
+        <xs:attribute name="spec-md"
+                      type="_path_required_nonempty"
+                      use="required">
+          <xs:annotation>
+            <xs:documentation>Path to the parent spec markdown (relative to project root). All children share this single spec; children's cycles attributes carve up its §6 cycle decomposition. Must be non-empty.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="splits-md"
+                      type="_path_required_nonempty"
+                      use="required">
+          <xs:annotation>
+            <xs:documentation>Path to the splits.xml file (relative to project root) that decomposed the spec into this group's children. Authored by ingest-spec when the spec exceeds split-trigger thresholds; validated by splits.xsd. Must be non-empty for grouped plans.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="sequence-md"
+                      type="_path"
+                      use="required">
+          <xs:annotation>
+            <xs:documentation>Path to the sequence.xml file (relative to project root) that encodes the group's wave/dependency DAG. May be the empty string before sequence-multi-plan runs (group is opened but not yet sequenced); non-empty after sequencing. exec-multi-plan refuses to dispatch a group with empty sequence-md.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <!-- Modified: <plans> sequence accepts both <plan> and <plan-group>. -->
+  <xs:element name="reference">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="plans">
+          <xs:complexType>
+            <xs:choice minOccurs="0"
+                       maxOccurs="unbounded">
+              <xs:element name="plan"
+                          type="_plan_entry" />
+              <xs:element name="plan-group"
+                          type="_plan_group" />
+            </xs:choice>
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+      <xs:attributeGroup ref="REFERENCE" />
+    </xs:complexType>
+  </xs:element>
 </xs:schema>

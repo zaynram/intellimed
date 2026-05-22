@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-model href="../../../.claude/context/schema/splits.xsd"?>
+<plan-splits spec="docs/superpowers/specs/2026-04-23-parser-migration-design.md"
+             group-id="2026-04-23-parser-migration"
+             generated-at="2026-05-15T19:41:23-05:00">
+  <plan suffix="json-and-coercion"
+        cycles="[§6.1..§6.4]"
+        depends-on=""
+        worktree="not-required"
+        blast-radius="src/trust_generator/v3/parsers/__init__.py;src/trust_generator/v3/parsers/json_parser.py;src/trust_generator/v3/parsers/coercion.py;tests/v3/parsers/__init__.py;tests/v3/parsers/test_json_parser.py;tests/v3/parsers/test_coercion.py"
+        synopsis="Build the JSON parser (round-trip + error surfaces) and the pure coercion helpers (_to_date, _to_decimal, _to_address, _to_person_reference) consumed by docx/pdf. Cycles §6.1–§6.4." />
+  <plan suffix="docx"
+        cycles="[§6.5..§6.8]"
+        depends-on="json-and-coercion"
+        worktree="not-required"
+        blast-radius="src/trust_generator/v3/parsers/docx_parser.py;tests/v3/parsers/test_docx_parser.py;tests/v3/parsers/_docx_fixtures.py;tests/v3/parsers/test_assets_integration.py"
+        synopsis="Build the docx parser inside-out: smoke (§6.5) → asset integration (§6.6) → post-promotion contract with combinatorial trust_type/marital_status mutation tests (§6.7) → coercion + post-merge resolution (§6.8)." />
+  <plan suffix="pdf"
+        cycles="[§6.9]"
+        depends-on="docx"
+        worktree="not-required"
+        blast-radius="src/trust_generator/v3/parsers/pdf_parser.py;tests/v3/parsers/test_pdf_parser.py"
+        synopsis="Build the pdf parser via AcroForm field iteration. Reuses cycle-3 coercion helpers and the _apply_post_promotion_protocol helper extracted in docx cycle 4b. Includes §5.4.A field-presence normalization." />
+  <plan suffix="registry"
+        cycles="[§6.10..§6.11]"
+        depends-on="docx,pdf"
+        worktree="not-required"
+        blast-radius="src/trust_generator/v3/parsers/registry.py;src/trust_generator/v3/parsers/__init__.py;tests/v3/parsers/test_registry.py"
+        synopsis="Wire parse_file extension dispatch and update the v3.parsers public exports. Includes the test_parse_file_ignores_seed_for_json contract test (M2 from plan-review pass 1)." />
+</plan-splits>

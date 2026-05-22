@@ -2,7 +2,7 @@
 
 
 a = Analysis(
-    ['src\\trust_generator\\app.py'],
+    ['src/trust_generator/v2/app.py'],
     pathex=[],
     binaries=[],
     datas=[],

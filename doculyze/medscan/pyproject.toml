@@ -1,0 +1,15 @@
+[project]
+name    = "medscan"
+version = "0.0.1"
+
+dependencies = ["pydantic>=2.12.0a1", "pymupdf>=1.26.4", "tqdm>=4.67.3"]
+
+    [project.scripts]
+    medscan = "src:main"
+
+    [project.optional-dependencies]
+    gui = ["gooey>=1.0.8", "wxpython>=4.2.3"]
+    llm = ["ollama>=0.5.3"]
+
+[tool.setuptools]
+packages = ["src"]

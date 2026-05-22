@@ -1,0 +1,12 @@
+; DO NOT EDIT (unless you know what you are doing)
+;
+; This subdirectory is a git "subrepo", and this file is maintained by the
+; git-subrepo command. See https://github.com/ingydotnet/git-subrepo#readme
+;
+[subrepo]
+	remote = https://github.com/crosbycrosbylaw/trust-generator
+	branch = main
+	commit = 24bdf9d9d96d88f275c70b8e71d72dcbef1fd7c4
+	parent = cc61cd266b84bede9452ba12b04c44f8a06b636f
+	method = merge
+	cmdver = 0.4.9

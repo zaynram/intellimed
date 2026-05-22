@@ -1,0 +1,79 @@
+[workspace]
+channels  = ["conda-forge"]
+platforms = ["win-64", "linux-64"]
+preview   = ["pixi-build"]
+
+[environments]
+default = ["dev"]
+
+[dependencies]
+python = ">=3.12"
+
+[pypi-dependencies]
+trust-generator = { path = ".", editable = true }
+reportlab = "*"
+pypdf = ">=4"
+
+[feature.dev]
+
+    [feature.dev.dependencies]
+    pyinstaller = "*"
+    pyright     = "*"
+    pytest      = "*"
+    ruff        = "*"
+
+    [feature.dev.tasks]
+
+        [feature.dev.tasks.build]
+        cmd     = "pixi build --quiet"
+        inputs  = ["src/trust_generator/**/*.py", "pyproject.toml"]
+        outputs = ["trust-generator-*.conda"]
+
+        [feature.dev.tasks.dist]
+        cmd = """pyinstaller \
+        --noconsole \
+        --name trust-generator \
+        --onefile src/trust_generator/app.py
+        """
+        depends-on = ["build"]
+        inputs = ["trust-generator-*.conda"]
+        outputs = ["trust-generator.spec", "dist/trust-generator.exe"]
+
+        [feature.dev.tasks.bundle]
+        cmd = "python scripts/bundle.py"
+        depends-on = ["dist"]
+        inputs = [
+            "scripts/bundle.py",
+            "trust-generator.spec",
+            "dist/trust-generator.exe",
+        ]
+        outputs = ["dist/trust-generator.zip"]
+
+        [feature.dev.tasks.test]
+        cmd = "pytest tests/ -v"
+
+        [feature.dev.tasks.lint]
+        cmd = "ruff check src/ tests/"
+
+        [feature.dev.tasks.format]
+        cmd = "ruff format src/ tests/"
+
+        [feature.dev.tasks.typecheck]
+        cmd = "pyright src/"
+
+[package]
+
+name    = "trust-generator"
+version = "2.2.0"
+
+    [package.build]
+    backend = { name = "pixi-build-python", version = "*" }
+
+    [package.host-dependencies]
+    hatchling = "*"
+
+    [package.run-dependencies]
+    pydantic    = ">=2"
+    python-docx = "*"
+    reportlab   = "*"
+    pypdf       = ">=4"

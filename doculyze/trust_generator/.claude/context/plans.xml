@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-model href="schema/plans.xsd"?>
+<reference
+    name="plans"
+    path=".claude/context/plans.xml"
+    created-at=""
+    modified-at=""
+    context="Canonical reference for all plans within the project. Plans are scopes and tasks designed for the purpose of advancing active development work."
+>
+    <plans>
+    </plans>
+</reference>

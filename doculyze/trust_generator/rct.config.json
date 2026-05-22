@@ -1,0 +1,35 @@
+{
+    "globals": {
+        "format": "xml",
+        "plugins": ["rct-plugin-track-work"]
+    },
+    "lang": {
+        "python": {
+            "tools": [
+                {
+                    "name": "pixi",
+                    "tasks": true,
+                    "environment": true
+                }
+            ]
+        }
+    },
+    "test": {
+        "command": "pixi run test",
+        "injectOn": "SessionStart",
+        "cache": true
+    },
+    "rules": [
+        {
+            "on": "PreToolUse",
+            "matcher": "Bash",
+            "match": {
+                "operator": "contains",
+                "target": "command",
+                "pattern": ["pip .+", "python .+"]
+            },
+            "action": "block",
+            "message": "Project dependencies are managed with pixi. Use `pixi run <task_or_executable> [...arguments]` instead of direct invocations."
+        }
+    ]
+}

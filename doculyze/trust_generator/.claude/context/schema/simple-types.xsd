@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+    <xs:simpleType name="_str">
+        <xs:restriction base="xs:string" />
+    </xs:simpleType>
+    <xs:simpleType name="_int">
+        <xs:restriction base="xs:positiveInteger" />
+    </xs:simpleType>
+    <xs:simpleType name="_float">
+        <xs:restriction base="xs:decimal" />
+    </xs:simpleType>
+    <xs:simpleType name="_bool">
+        <xs:restriction base="xs:boolean" />
+    </xs:simpleType>
+    <xs:simpleType name="_label">
+        <xs:restriction base="xs:string">
+            <xs:maxLength value="30" />
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="_long_desc">
+        <xs:restriction base="xs:string">
+            <xs:maxLength value="180" />
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="_short_desc">
+        <xs:restriction base="xs:string">
+            <xs:maxLength value="60" />
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="_slug">
+        <xs:restriction base="xs:string">
+            <xs:pattern value="\d{4}-\d{2}-\d{2}_[a-zA-Z0-9_]+" />
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="_status">
+        <xs:restriction base="xs:string">
+            <xs:pattern value="open|in-progress|closed" />
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="_hash">
+        <xs:restriction base="xs:string">
+            <xs:pattern value="[a-f0-9]{4,39}" />
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="_path">
+        <xs:restriction base="xs:string">
+            <xs:pattern
+                value="([^/\s.]|\.[^/\s.]|\.\.[^/\s])[^/\s]*(/([^/\s.]|\.[^/\s.]|\.\.[^/\s])[^/\s]*)*" />
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="_timestamp">
+        <xs:union>
+            <xs:simpleType>
+                <xs:restriction base="xs:dateTime" />
+            </xs:simpleType>
+            <xs:simpleType>
+                <xs:restriction base="_str">
+                    <xs:maxLength value="0" />
+                </xs:restriction>
+            </xs:simpleType>
+        </xs:union>
+    </xs:simpleType>
+</xs:schema>

@@ -1,0 +1,21 @@
+__pycache__
+.pytest_cache
+.ruff_cache
+
+build
+node_modules
+
+*.exe
+*.conda
+*.pyc
+*.egg-info
+
+*.*shm
+*.*wal
+
+.vscode/settings.json
+
+# Local tool state
+.claude/worktrees/
+.task_orchestrator/
+uv.lockvenv/

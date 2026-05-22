@@ -1,0 +1,14 @@
+{
+  "lockfileVersion": 1,
+  "configVersion": 1,
+  "workspaces": {
+    "": {
+      "devDependencies": {
+        "reactive-context-toolkit": "github:zaynram/reactive-context-toolkit",
+      },
+    },
+  },
+  "packages": {
+    "reactive-context-toolkit": ["reactive-context-toolkit@github:zaynram/reactive-context-toolkit#91896a9", { "optionalDependencies": { "rct-plugin-autonomous-ops": "workspace:*", "rct-plugin-issue-scope": "workspace:*", "rct-plugin-tasktools": "workspace:*", "rct-plugin-tmux": "workspace:*", "rct-plugin-track-work": "workspace:*" }, "bin": { "rct": "./src/cli/index.ts" } }, "zaynram-reactive-context-toolkit-91896a9", "sha512-mhSukgq5tPFLMtuxylRomzi3wMSbZ+FzPChG1WtgK1Zziwt8fGyv3n+OYK2MyeJoKTFvdE3U75JqQbSR+/6r3w=="],
+  }
+}

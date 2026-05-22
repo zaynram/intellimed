@@ -1,0 +1,92 @@
+{
+    "trust_type": "joint",
+    "grantor": {
+        "full_legal_name": "",
+        "date_of_birth": "",
+        "ssn": "",
+        "address": "",
+        "phone": "",
+        "email": "",
+        "employer": "",
+        "maiden_name": ""
+    },
+    "husband": {
+        "full_legal_name": "Zayn Adam Ramdass",
+        "date_of_birth": "",
+        "ssn": "",
+        "address": "",
+        "phone": "",
+        "email": "",
+        "employer": "",
+        "maiden_name": ""
+    },
+    "wife": {
+        "full_legal_name": "",
+        "date_of_birth": "",
+        "ssn": "",
+        "address": "",
+        "phone": "",
+        "email": "",
+        "employer": "",
+        "maiden_name": ""
+    },
+    "marriage": {
+        "date_of_marriage": "",
+        "state_of_marriage": "",
+        "prenuptial_agreement": "",
+        "prenuptial_details": ""
+    },
+    "trust_id": {
+        "desired_trust_name": "",
+        "date": "",
+        "state_of_governing_law": "Illinois",
+        "county_of_execution": "",
+        "whose_ssn_for_tax_id": ""
+    },
+    "office": {
+        "file_number": "",
+        "attorney": "",
+        "paralegal": "",
+        "date_opened": ""
+    },
+    "children": [],
+    "successor_trustees": [],
+    "real_property": [],
+    "financial_accounts": [],
+    "vehicles": [],
+    "insurance_policies": [],
+    "pensions": [],
+    "valuables": [],
+    "beneficiary_shares": [],
+    "specific_bequests": [],
+    "withdrawal_schedule": [],
+    "other_beneficiaries": [],
+    "elections": {
+        "initial_trustee": "both",
+        "property_classification": "communal",
+        "tangible_distribution": "equal_children",
+        "division_method": "trustee",
+        "distribution_standard": "hems",
+        "beneficiary_death": "per_stirpes_beneficiary",
+        "remote_contingent": "intestacy",
+        "remote_contingent_charity": "",
+        "retirement_strategy": "pod",
+        "insurance_strategy": "spouse_then_children",
+        "surviving_amendment": "full",
+        "power_of_appointment": "general",
+        "no_contest": true,
+        "spendthrift": true,
+        "probate_coordination": true,
+        "portability": true,
+        "trustee_bond": false,
+        "dispute_resolution": "mediation_arbitration",
+        "trustee_compensation": "reasonable"
+    },
+    "text_blocks": {
+        "statement_of_intent": "",
+        "personal_message": "",
+        "custom_distribution_terms": "",
+        "custom_beneficiary_terms": "",
+        "additional_notes": ""
+    }
+}

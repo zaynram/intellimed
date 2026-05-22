@@ -1,0 +1,10 @@
+<?xml-model href="schema/chores.xsd"?>
+<reference
+    name="chores"
+    path=".claude/context/chores.xml"
+    context="Canonical reference for outstanding chores for the project. Chores are small actionable items that need to be addressed, but do not take priority over active development work."
+    created-at=""
+    modified-at=""
+>
+    <chores></chores>
+</reference>

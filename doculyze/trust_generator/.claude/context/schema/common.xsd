@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+    <xs:include schemaLocation="simple-types.xsd" />
+    <xs:complexType name="_entry" mixed="false">
+        <xs:attribute name="index" type="_int" use="required" />
+        <xs:attribute name="id" type="_slug" use="required">
+            <xs:annotation>
+                <xs:documentation>A unique identifier for this entry in the format {date}-{slug}.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="status" type="_status" use="required">
+            <xs:annotation>
+                <xs:documentation>The status of the plan; one of 'open', 'in-progress', or 'closed'.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="expendable" type="_bool" use="required">
+            <xs:annotation>
+                <xs:documentation>Whether the entry may be deleted upon completion.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="synopsis" type="_short_desc" use="required">
+            <xs:annotation>
+                <xs:documentation>Concise description of the scope and purpose of the entry.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+    <xs:attributeGroup name="REFERENCE">
+        <xs:attribute name="name" type="_label" use="required">
+            <xs:annotation>
+                <xs:documentation>The name of the reference document.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="path" type="_path" use="required">
+            <xs:annotation>
+                <xs:documentation>The path to the reference document, relative to project root.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="created-at" type="_timestamp" use="required">
+            <xs:annotation>
+                <xs:documentation>The creation time of the reference document.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="modified-at" type="_timestamp" use="required">
+            <xs:annotation>
+                <xs:documentation>The time of the last modification to the reference document.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="context" type="_long_desc" use="required">
+            <xs:annotation>
+                <xs:documentation>Additional information specific to the reference document..</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:attributeGroup>
+</xs:schema>
